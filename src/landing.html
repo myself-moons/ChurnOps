@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Water Potability | Overview</title>
+  <style>
+    :root { --ink:#102a43; --muted:#627d98; --line:#d9e2ec; --paper:#f5f7f9; --white:#fff; --teal:#0f766e; --gold:#f59e0b; --blue:#2563eb; --shadow:0 16px 40px rgba(16,42,67,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.5 Georgia, 'Times New Roman', serif; }
+    .topbar { background:var(--ink); color:white; padding:22px clamp(20px,6vw,88px) 30px; border-bottom:5px solid var(--gold); }
+    nav { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:42px; font:700 12px Arial,sans-serif; }
+    nav a { color:#d9e2ec; text-decoration:none; padding:8px 11px; border:1px solid transparent; border-radius:4px; }
+    nav a:hover, nav a.active { color:white; border-color:#486581; background:#243b53; }
+    .eyebrow { color:#7dd3fc; text-transform:uppercase; letter-spacing:.14em; font:700 11px/1.2 Arial,sans-serif; margin-bottom:10px; }
+    h1 { font-size:clamp(36px,7vw,76px); line-height:.95; margin:0 0 17px; max-width:850px; }
+    .lead { color:#bcccdc; max-width:720px; font-size:18px; margin:0; }
+    main { max-width:1320px; margin:0 auto; padding:30px clamp(20px,6vw,88px) 60px; }
+    .pipeline { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:-2px; position:relative; }
+    .stage { background:var(--white); padding:19px; border:1px solid var(--line); box-shadow:var(--shadow); min-height:115px; }
+    .stage:first-child { border-radius:5px 0 0 5px; }
+    .stage:last-child { border-radius:0 5px 5px 0; }
+    .stage + .stage { border-left:0; }
+    .stage small { color:var(--teal); font:700 11px Arial,sans-serif; text-transform:uppercase; letter-spacing:.1em; }
+    .stage strong { display:block; font-size:18px; margin-top:8px; }
+    .stage span { color:var(--muted); display:block; margin-top:4px; font-size:13px; }
+    .section-head { display:flex; justify-content:space-between; align-items:end; gap:16px; margin:42px 0 15px; }
+    h2 { font-size:24px; margin:0; }
+    .section-note { color:var(--muted); margin:0; }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:17px; }
+    .card { background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:5px; padding:20px; }
+    .datasets { grid-column:span 7; }
+    .results { grid-column:span 5; }
+    .runs { grid-column:span 12; background:#e7f5f2; border-color:#99f6e4; }
+    .row { display:flex; justify-content:space-between; gap:15px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .row:last-child { border-bottom:0; }
+    .label { font-weight:700; }
+    .detail { color:var(--muted); text-align:right; font-size:13px; }
+    .metric { margin:15px 0; }
+    .metric-top { display:flex; justify-content:space-between; font:700 13px Arial,sans-serif; }
+    .bar { height:10px; background:#e9eff5; margin-top:6px; border-radius:2px; overflow:hidden; }
+    .bar span { display:block; height:100%; background:var(--teal); }
+    .run-meta { display:flex; gap:28px; flex-wrap:wrap; margin-top:14px; }
+    .run-meta strong { display:block; font-size:25px; }
+    .run-meta span { color:var(--muted); font-size:13px; }
+    footer { color:var(--muted); margin-top:25px; font-size:13px; }
+    @media(max-width:800px) { .pipeline { grid-template-columns:repeat(2,1fr); } .stage:first-child,.stage:last-child { border-radius:0; } .stage:nth-child(1){border-radius:5px 0 0 0}.stage:nth-child(2){border-right:1px solid var(--line);border-radius:0 5px 0 0}.stage:nth-child(3){border-left:1px solid var(--line);border-radius:0 0 0 5px}.stage:nth-child(4){border-radius:0 0 5px 0}.stage + .stage{border-left:1px solid var(--line)} .datasets,.results { grid-column:span 12; } }
+    @media(max-width:500px) { .pipeline { grid-template-columns:1fr; } .stage,.stage:nth-child(n){border:1px solid var(--line);border-radius:4px;margin-bottom:7px;} }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav aria-label="Main navigation">
+      <a class="active" href="/">Overview</a><a href="/dashboard">MLflow dashboard</a><a href="/predict">Predict</a><a href="/docs">API docs</a>
+    </nav>
+    <div class="eyebrow">Water potability / project overview</div>
+    <h1>From raw water data to a tracked model.</h1>
+    <p class="lead">A concise map of the DVC pipeline, the data it moves, the model results it produces, and the experiments recorded along the way.</p>
+  </header>
+  <main id="app"><p>Loading project overview...</p></main>
+  <script>
+    const app = document.getElementById('app');
+    const number = value => new Intl.NumberFormat().format(value || 0);
+    const percent = value => `${(Number(value || 0) * 100).toFixed(1)}%`;
+    const dataset = (label, value) => `<div class="row"><span class="label">${label}</span><span class="detail">${number(value.rows)} rows / ${number(value.features)} features<br>${value.missing_values ? number(value.missing_values) + ' missing' : 'complete'}</span></div>`;
+    const metric = (label, value) => `<div class="metric"><div class="metric-top"><span>${label}</span><span>${percent(value)}</span></div><div class="bar"><span style="width:${Math.min(100, Number(value || 0) * 100)}%"></span></div></div>`;
+    async function load() {
+      try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+        const latest = data.tracking.latest_run;
+        app.innerHTML = `
+          <section class="section-head"><div><h2>Pipeline at a glance</h2><p class="section-note">Every stage is reproducible through DVC.</p></div></section>
+          <section class="pipeline">${data.project.pipeline.map((stage, index) => `<div class="stage"><small>Stage ${index + 1}</small><strong>${stage}</strong><span>${['Build the split','Fill missing values','Train Random Forest','Score and log'][index]}</span></div>`).join('')}</section>
+          <section class="section-head"><div><h2>What the model sees</h2><p class="section-note">Raw and processed dataset health.</p></div></section>
+          <section class="grid"><div class="card datasets">${dataset('Training data', data.datasets.train)}${dataset('Test data', data.datasets.test)}${dataset('Processed training', data.datasets.processed_train)}${dataset('Processed test', data.datasets.processed_test)}</div>
+          <div class="card results"><h2>Current results</h2><p class="section-note">Latest metrics written by evaluation.</p>${metric('Accuracy',data.results.acc)}${metric('Precision',data.results.precision)}${metric('Recall',data.results.recall)}${metric('F1 score',data.results.f1_score)}</div>
+          <div class="card runs"><h2>Experiment progress</h2><p class="section-note">MLflow keeps every model family and parameter choice available for comparison.</p><div class="run-meta"><div><strong>${number(data.tracking.run_count)}</strong><span>tracked runs</span></div><div><strong>${number(data.tracking.finished_count)}</strong><span>finished runs</span></div><div><strong>${data.tracking.best_run ? percent(data.tracking.best_run.test_accuracy) : '-'}</strong><span>best accuracy</span></div><div><strong>${latest ? latest.model_type : '-'}</strong><span>latest model</span></div></div></div></section>
+          <footer>Continue to <a href="/dashboard">MLflow dashboard</a> for run history, or <a href="/predict">Predict</a> for an interactive water sample.</footer>`;
+      } catch (error) { app.innerHTML = `<p>Unable to load overview: ${error.message}</p>`; }
+    }
+    load();
+  </script>
+</body>
+</html>

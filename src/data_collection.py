@@ -1,17 +1,7 @@
 import os
-import sys
-import subprocess
 from pathlib import Path
 
-required_packages = ["pandas", "numpy", "scikit-learn"]
-for package in required_packages:
-    try:
-        __import__(package)
-    except ModuleNotFoundError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 
 # Locate the dataset in the repository root

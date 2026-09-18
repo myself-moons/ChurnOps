@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Water Potability | Predict</title>
+  <style>
+    :root { --ink:#102a43; --muted:#627d98; --line:#d9e2ec; --paper:#f5f7f9; --white:#fff; --teal:#0f766e; --gold:#f59e0b; --red:#b42318; --shadow:0 16px 40px rgba(16,42,67,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.5 Georgia, 'Times New Roman', serif; }
+    .topbar { background:var(--ink); color:white; padding:22px clamp(20px,6vw,88px) 28px; border-bottom:5px solid var(--gold); }
+    nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:38px; font:700 12px Arial,sans-serif; }
+    nav a { color:#d9e2ec; text-decoration:none; padding:8px 11px; border:1px solid transparent; border-radius:4px; }
+    nav a:hover, nav a.active { color:white; border-color:#486581; background:#243b53; }
+    .eyebrow { color:#7dd3fc; text-transform:uppercase; letter-spacing:.14em; font:700 11px/1.2 Arial,sans-serif; margin-bottom:9px; }
+    h1 { font-size:clamp(34px,6vw,62px); line-height:.95; margin:0 0 14px; }
+    .subtitle { color:#bcccdc; max-width:650px; margin:0; font-size:17px; }
+    main { max-width:1100px; margin:0 auto; padding:32px clamp(20px,6vw,88px) 60px; }
+    .layout { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:start; }
+    .panel { background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:5px; padding:23px; }
+    .panel h2 { margin:0 0 5px; font-size:22px; }
+    .note { color:var(--muted); margin:0 0 20px; }
+    form { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; }
+    label { color:var(--muted); font:700 12px Arial,sans-serif; }
+    input { display:block; width:100%; margin-top:6px; padding:12px; color:var(--ink); border:1px solid #bcccdc; border-radius:3px; background:#fbfdff; font:16px Georgia,serif; }
+    input:focus { outline:3px solid #ccfbf1; border-color:var(--teal); }
+    button { grid-column:span 2; margin-top:5px; padding:13px 17px; border:0; border-radius:4px; background:var(--teal); color:white; cursor:pointer; font:700 14px Arial,sans-serif; }
+    button:hover { background:#115e59; }
+    .result { min-height:220px; background:#e7f5f2; border-color:#99f6e4; }
+    .result h2 { color:var(--teal); }
+    .result-value { font-size:29px; line-height:1.1; margin:28px 0 12px; }
+    .result p { color:#365c64; }
+    .error { color:var(--red); background:#fff1f2; border:1px solid #fecdd3; padding:12px; border-radius:4px; }
+    footer { color:var(--muted); margin-top:22px; font-size:13px; }
+    @media(max-width:760px) { .layout { grid-template-columns:1fr; } }
+    @media(max-width:480px) { form { grid-template-columns:1fr; } button { grid-column:span 1; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav aria-label="Main navigation">
+      <a href="/">Overview</a><a href="/dashboard">MLflow dashboard</a><a class="active" href="/predict">Predict</a><a href="/docs">API docs</a>
+    </nav>
+    <div class="eyebrow">Water potability / inference</div>
+    <h1>Test a water sample.</h1>
+    <p class="subtitle">Enter the nine measurements used by the currently selected model and get a prediction from the live FastAPI service.</p>
+  </header>
+  <main>
+    <div class="layout">
+      <section class="panel">
+        <h2>Sample measurements</h2>
+        <p class="note">Use numeric values. The defaults are representative values for a quick check.</p>
+        <form id="prediction-form">
+          <label>pH<input name="ph" type="number" step="any" value="7.0" required></label>
+          <label>Hardness<input name="Hardness" type="number" step="any" value="200" required></label>
+          <label>Solids<input name="Solids" type="number" step="any" value="20000" required></label>
+          <label>Chloramines<input name="Chloramines" type="number" step="any" value="7" required></label>
+          <label>Sulfate<input name="Sulfate" type="number" step="any" value="300" required></label>
+          <label>Conductivity<input name="Conductivity" type="number" step="any" value="450" required></label>
+          <label>Organic carbon<input name="Organic_carbon" type="number" step="any" value="15" required></label>
+          <label>Trihalomethanes<input name="Trihalomethanes" type="number" step="any" value="60" required></label>
+          <label>Turbidity<input name="Turbidity" type="number" step="any" value="3.5" required></label>
+          <button type="submit">Run prediction</button>
+        </form>
+      </section>
+      <aside class="panel result" id="result" aria-live="polite">
+        <div class="eyebrow">Model response</div>
+        <h2>Ready for a sample</h2>
+        <p class="result-value">No prediction yet</p>
+        <p>Results appear here after the form is submitted. This calls the same <code>POST /predict</code> endpoint documented in the API.</p>
+      </aside>
+    </div>
+    <footer>Need the raw API contract? Visit <a href="/docs">/docs</a>. Return to the <a href="/">project overview</a>.</footer>
+  </main>
+  <script>
+    const form = document.getElementById('prediction-form');
+    const result = document.getElementById('result');
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(form).entries());
+      Object.keys(payload).forEach(key => payload[key] = Number(payload[key]));
+      result.innerHTML = '<div class="eyebrow">Model response</div><h2>Running...</h2><p class="result-value">Evaluating sample</p>';
+      try {
+        const response = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || 'Prediction request failed');
+        result.innerHTML = `<div class="eyebrow">Model response</div><h2>Prediction complete</h2><p class="result-value">${data.prediction}</p><p>The trained model evaluated all nine supplied measurements.</p>`;
+      } catch (error) {
+        result.innerHTML = `<div class="error">${error.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -5,8 +5,8 @@ stages:
     deps:
     - path: src/data_collection.py
       hash: md5
-      md5: 5d3b4a953b05a169c757556dba3d3372
-      size: 1246
+      md5: aed6f82c6cfdbd1b728294939c1f35dd
+      size: 957
     outs:
     - path: data/raw/test.csv
       hash: md5
@@ -29,50 +29,68 @@ stages:
       size: 414908
     - path: src/data_preprocessing.py
       hash: md5
-      md5: 438f937ad92e80bef3437e707af28081
-      size: 955
+      md5: c6ad1fa5370c979790bd32eeec64a9bf
+      size: 973
     outs:
     - path: data/processed/test_processed.csv
       hash: md5
-      md5: 862117b0903c7e9b569cee606af04a0b
-      size: 104004
+      md5: 7c32ae8bdc9cefb6b69c5ac7c3b31dc1
+      size: 108781
     - path: data/processed/train_processed.csv
       hash: md5
-      md5: 01f96931d2dcb5ffaa59625ece79bee4
-      size: 414604
+      md5: 06e435e51d497d249d0c7bafc330f51c
+      size: 434078
   Model_Training:
     cmd: python src/model_training.py
     deps:
     - path: data/processed/test_processed.csv
       hash: md5
-      md5: 862117b0903c7e9b569cee606af04a0b
-      size: 104004
+      md5: 7c32ae8bdc9cefb6b69c5ac7c3b31dc1
+      size: 108781
     - path: data/processed/train_processed.csv
       hash: md5
-      md5: 01f96931d2dcb5ffaa59625ece79bee4
-      size: 414604
+      md5: 06e435e51d497d249d0c7bafc330f51c
+      size: 434078
     - path: src/model_training.py
       hash: md5
-      md5: 0f97104984383e90e1961ad332a4bb52
-      size: 482
+      md5: fa1c781a54f80ea46fcfc173f7946f19
+      size: 3196
+    params:
+      params.yaml:
+        model:
+          model_type: xgboost
+          n_estimators: 150
+          max_depth: 6
+          random_state: 42
+          learning_rate: 0.1
+          subsample: 0.9
+          colsample_bytree: 0.9
     outs:
+    - path: .mlflow_run_id
+      hash: md5
+      md5: b3d8bd5b56d3ab96cdc71f4d3c5196d2
+      size: 32
     - path: model.pkl
       hash: md5
-      md5: 8535ed3b5d9894eb053d1e5751644730
-      size: 7220323
+      md5: ed2742c189bbeecb3bf64fed9a60f8d3
+      size: 433959
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
+    - path: .mlflow_run_id
+      hash: md5
+      md5: b3d8bd5b56d3ab96cdc71f4d3c5196d2
+      size: 32
     - path: model.pkl
       hash: md5
-      md5: 8535ed3b5d9894eb053d1e5751644730
-      size: 7220323
+      md5: ed2742c189bbeecb3bf64fed9a60f8d3
+      size: 433959
     - path: src/model_evaluation.py
       hash: md5
-      md5: 7e7bc5a9a7f26f54f833483dc4cb7de5
-      size: 889
+      md5: c30787565f7992ef746a5d4d4c71bf43
+      size: 1761
     outs:
     - path: metrics.json
       hash: md5
-      md5: 91e5eccfae30170b3015a9327491b6cf
-      size: 142
+      md5: 8975e9f8cb7f778d83d19c8b1873eb3d
+      size: 140

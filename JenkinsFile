@@ -4,9 +4,35 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Cloning repository'
-                git branch: 'main',
-                    url :'https://github.com/myself-moons/Jenkins_Test.git'
+                checkout scm
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                sh '''
+                    python3.12 -m venv .venv
+                    .venv/bin/python -m pip install --upgrade pip
+                    .venv/bin/python -m pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Run DVC pipeline') {
+            steps {
+                sh 'export PATH="$WORKSPACE/.venv/bin:$PATH"; .venv/bin/dvc repro'
+            }
+        }
+
+        stage('Run tests') {
+            steps {
+                sh '.venv/bin/pytest -q'
+            }
+        }
+
+        stage('Archive results') {
+            steps {
+                archiveArtifacts artifacts: 'metrics.json,model.pkl', fingerprint: true
             }
         }
     }

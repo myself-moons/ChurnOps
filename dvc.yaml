@@ -23,13 +23,17 @@ stages:
       - data/processed/train_processed.csv
       - data/processed/test_processed.csv
       - src/model_training.py
+    params:
+      - model
     outs:
       - model.pkl
+      - .mlflow_run_id
 
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
       - model.pkl
+      - .mlflow_run_id
       - src/model_evaluation.py
     outs:
       - metrics.json

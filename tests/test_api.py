@@ -8,7 +8,28 @@ client = TestClient(app)
 def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json()["message"].startswith("Welcome")
+    assert "From raw water data to a tracked model." in response.text
+
+
+def test_dashboard_page():
+    response = client.get("/dashboard")
+    assert response.status_code == 200
+    assert "Run history &amp; progress" in response.text
+
+
+def test_prediction_page():
+    response = client.get("/predict")
+    assert response.status_code == 200
+    assert "Test a water sample." in response.text
+
+
+def test_dashboard_data():
+    response = client.get("/api/dashboard")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["tracking"]["run_count"] >= 1
+    assert data["datasets"]["train"]["rows"] > 0
+    assert "f1_score" in data["results"]
 
 
 def test_predict_endpoint():
