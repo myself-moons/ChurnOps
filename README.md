@@ -53,7 +53,7 @@ is `POST /predict`.
 Edit [params.yaml](params.yaml), then run:
 
 ```bash
-
+dvc repro
 ```
 
 Select a model with `model.model_type`:
@@ -113,4 +113,3 @@ For setup details and common errors, use [Steps_for_Pipeline](Steps_for_Pipeline
 
 The project uses the local `water_potability (1).csv` source dataset. Generated
 raw and processed CSVs are DVC outputs and are not committed directly to Git.
-editing that file, run training and evaluation directly:
