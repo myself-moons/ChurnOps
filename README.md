@@ -83,6 +83,47 @@ Open `http://localhost:5000` and compare model families. A shared team setup
 should set `MLFLOW_TRACKING_URI` to a persistent MLflow server before running
 `dvc repro`.
 
+## Deploy on Render
+
+This repository includes [render.yaml](render.yaml) for a Render Blueprint.
+The web service uses Python 3.12, installs `requirements.txt`, rebuilds the
+ignored DVC output files from the committed source dataset, and starts FastAPI
+on Render's `$PORT`.
+
+### Blueprint deployment
+
+1. Push the repository, including `render.yaml`, to GitHub or GitLab.
+2. In Render, select **New > Blueprint** and connect the repository.
+3. Select the branch containing `render.yaml` and apply the Blueprint.
+4. Wait for the build to finish, then open the generated `onrender.com` URL.
+
+The deployed pages are `/`, `/dashboard`, `/predict`, and `/docs`. The
+prediction API is `POST /predict`.
+
+The default configuration uses Render's free plan and Oregon region. Change
+`plan` or `region` in `render.yaml` before deploying if needed. No secret
+environment variables are required. `MLFLOW_TRACKING_URI` is intentionally
+unset, so MLflow uses the service's local filesystem during the build.
+Render's free service filesystem is ephemeral; use a hosted MLflow tracking
+server and set `MLFLOW_TRACKING_URI` in Render if experiment history must
+survive redeploys.
+
+### Manual web-service settings
+
+If you create the service from the Render dashboard instead of the Blueprint,
+use:
+
+| Setting | Value |
+| --- | --- |
+| Runtime | Python 3 |
+| Python version | `3.12.3` |
+| Build command | `pip install -r requirements.txt && python src/data_collection.py && python src/data_preprocessing.py && python src/model_training.py && python src/model_evaluation.py` |
+| Start command | `uvicorn src.main:app --host 0.0.0.0 --port $PORT` |
+| Health check path | `/docs` |
+
+Do not use `--reload` in the Render start command. Keep the service root at
+the repository root so the relative DVC and data paths resolve correctly.
+
 ## Jenkins
 
 The committed [JenkinsFile](JenkinsFile) checks out the repository, creates a
