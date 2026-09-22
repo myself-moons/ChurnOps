@@ -17,7 +17,7 @@ FastAPI exposes the results.
 ## Quick start
 
 ```bash
-cd /workspaces/Jenkins_Test
+cd /workspaces/WaterOps
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
