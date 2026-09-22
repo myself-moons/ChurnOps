@@ -69,13 +69,14 @@
         const response = await fetch('/api/dashboard');
         const data = await response.json();
         const latest = data.tracking.latest_run;
+        const best = data.tracking.best_run;
         app.innerHTML = `
           <section class="section-head"><div><h2>Pipeline at a glance</h2><p class="section-note">Every stage is reproducible through DVC.</p></div></section>
           <section class="pipeline">${data.project.pipeline.map((stage, index) => `<div class="stage"><small>Stage ${index + 1}</small><strong>${stage}</strong><span>${['Build the split','Fill missing values','Compare both models','Score and log'][index]}</span></div>`).join('')}</section>
           <section class="section-head"><div><h2>What the model sees</h2><p class="section-note">Raw and processed dataset health.</p></div></section>
           <section class="grid"><div class="card datasets">${dataset('Training data', data.datasets.train)}${dataset('Test data', data.datasets.test)}${dataset('Processed training', data.datasets.processed_train)}${dataset('Processed test', data.datasets.processed_test)}</div>
           <div class="card results"><h2>Current results</h2><p class="section-note">Latest metrics written by evaluation.</p>${metric('Accuracy',data.results.acc)}${metric('Precision',data.results.precision)}${metric('Recall',data.results.recall)}${metric('F1 score',data.results.f1_score)}</div>
-          <div class="card runs"><h2>Experiment progress</h2><p class="section-note">MLflow keeps every model family and parameter choice available for comparison.</p><div class="run-meta"><div><strong>${number(data.tracking.run_count)}</strong><span>tracked runs</span></div><div><strong>${number(data.tracking.finished_count)}</strong><span>finished runs</span></div><div><strong>${data.tracking.best_run ? percent(data.tracking.best_run.test_accuracy) : '-'}</strong><span>best accuracy</span></div><div><strong>${latest ? latest.model_type : '-'}</strong><span>latest model</span></div></div></div></section>
+          <div class="card runs"><h2>Experiment progress</h2><p class="section-note">MLflow keeps every model family and parameter choice available for comparison.</p><div class="run-meta"><div><strong>${number(data.tracking.run_count)}</strong><span>tracked runs</span></div><div><strong>${number(data.tracking.finished_count)}</strong><span>finished runs</span></div><div><strong>${best ? percent(best.test_accuracy) : '-'}</strong><span>best accuracy</span></div><div><strong>${latest ? latest.model_type : '-'}</strong><span>last trained model</span></div><div><strong>${best ? best.model_type : '-'}</strong><span>best current model</span></div></div></div></section>
           <footer>Continue to <a href="/dashboard">MLflow dashboard</a> for run history, or <a href="/predict">Predict</a> for an interactive water sample.</footer>`;
       } catch (error) { app.innerHTML = `<p>Unable to load overview: ${error.message}</p>`; }
     }
