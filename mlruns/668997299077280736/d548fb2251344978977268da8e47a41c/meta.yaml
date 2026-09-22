@@ -1,0 +1,15 @@
+artifact_uri: file:///workspaces/WaterOps/mlruns/668997299077280736/d548fb2251344978977268da8e47a41c/artifacts
+end_time: 1790060809915
+entry_point_name: ''
+experiment_id: '668997299077280736'
+lifecycle_stage: active
+run_id: d548fb2251344978977268da8e47a41c
+run_name: vaunted-midge-474
+run_uuid: d548fb2251344978977268da8e47a41c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790060800045
+status: 3
+tags: []
+user_id: codespace

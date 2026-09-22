@@ -32,6 +32,10 @@ git commit -m "Train models and update tracked runs"
 git push origin main
 ```
 
+Render deploys the pushed `model.pkl`, `metrics.json`, and `mlruns/` directory;
+the dashboard therefore shows the complete history from this Codespace and
+selects the best pushed model for predictions.
+
 Runbook: [Steps_for_Pipeline](Steps_for_Pipeline)
 
 ## Run the web application
@@ -66,17 +70,19 @@ Select a model with `model.model_type`:
 ```yaml
 model:
   model_type: xgboost
-  n_estimators: 150
-  max_depth: 6
+  n_estimators: 200
+  max_depth: 8
   random_state: 42
-  learning_rate: 0.1
-  subsample: 0.9
-  colsample_bytree: 0.9
+  learning_rate: 0.08
+  subsample: 0.95
+  colsample_bytree: 0.95
 ```
 
-Use `random_forest` to run the Random Forest implementation. Every training
-run logs model type, parameters, training metrics, test metrics, and the model
-artifact to the `water-potability` MLflow experiment.
+The DVC training stage runs both model families with these settings. Every
+training run logs model type, parameters, training metrics, test metrics, and
+the model artifact to the `water-potability` MLflow experiment. Change a model
+parameter before `dvc repro` to create a new pair of comparison runs; DVC
+skips the stage when inputs and parameters are unchanged.
 
 View runs locally:
 

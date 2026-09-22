@@ -58,34 +58,29 @@ stages:
       params.yaml:
         model:
           model_type: xgboost
-          n_estimators: 150
-          max_depth: 6
+          n_estimators: 200
+          max_depth: 8
           random_state: 42
-          learning_rate: 0.1
-          subsample: 0.9
-          colsample_bytree: 0.9
+          learning_rate: 0.08
+          subsample: 0.95
+          colsample_bytree: 0.95
     outs:
     - path: .mlflow_run_id
       hash: md5
-      md5: 2b96c7addec57817c57f2a1f03431856
+      md5: f6f78d0e5b8ea56f29d540d4954099e9
       size: 32
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
     - path: .mlflow_run_id
       hash: md5
-      md5: 2b96c7addec57817c57f2a1f03431856
+      md5: f6f78d0e5b8ea56f29d540d4954099e9
       size: 32
     - path: model.pkl
       hash: md5
-      md5: 7c014f230505425a2f843b095903c2c9
-      size: 924529
+      md5: 16af0504e2a387d1880d5fb2c56dd39b
+      size: 2528946
     - path: src/model_evaluation.py
       hash: md5
       md5: c30787565f7992ef746a5d4d4c71bf43
       size: 1761
-    outs:
-    - path: metrics.json
-      hash: md5
-      md5: 7cec46779615731b5f00546c6f46cec8
-      size: 141

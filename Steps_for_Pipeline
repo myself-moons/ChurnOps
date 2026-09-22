@@ -72,17 +72,20 @@ Model settings live in `params.yaml`. The supported model types are:
 - `random_forest`
 - `xgboost`
 
+The committed DVC stage runs both families for every parameter set and writes
+the higher-accuracy model to `model.pkl`.
+
 Random Forest example:
 
 ```yaml
 model:
   model_type: random_forest
-  n_estimators: 250
-  max_depth: 14
+  n_estimators: 200
+  max_depth: 8
   random_state: 42
-  learning_rate: 0.1
-  subsample: 1.0
-  colsample_bytree: 1.0
+  learning_rate: 0.08
+  subsample: 0.95
+  colsample_bytree: 0.95
 ```
 
 XGBoost example:
@@ -90,12 +93,12 @@ XGBoost example:
 ```yaml
 model:
   model_type: xgboost
-  n_estimators: 150
-  max_depth: 6
+  n_estimators: 200
+  max_depth: 8
   random_state: 42
-  learning_rate: 0.1
-  subsample: 0.9
-  colsample_bytree: 0.9
+  learning_rate: 0.08
+  subsample: 0.95
+  colsample_bytree: 0.95
 ```
 
 After changing parameters, run:
@@ -106,6 +109,9 @@ dvc repro
 
 DVC reuses unchanged data stages and reruns training/evaluation. Each training
 execution creates a new MLflow run; previous model-family runs are preserved.
+When `params.yaml` changes, the training stage creates one new run for each
+model family and selects the best one for prediction. If nothing changed, DVC
+correctly skips the stage.
 The MLflow store is versioned, so push it with the selected model and metrics:
 
 ```bash

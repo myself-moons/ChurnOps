@@ -1,8 +1,8 @@
 model:
   model_type: xgboost
-  n_estimators: 150
-  max_depth: 6
+  n_estimators: 200
+  max_depth: 8
   random_state: 42
-  learning_rate: 0.1
-  subsample: 0.9
-  colsample_bytree: 0.9
+  learning_rate: 0.08
+  subsample: 0.95
+  colsample_bytree: 0.95
