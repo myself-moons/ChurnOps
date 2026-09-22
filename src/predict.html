@@ -20,12 +20,12 @@
     .panel { background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:5px; padding:23px; }
     .panel h2 { margin:0 0 5px; font-size:22px; }
     .note { color:var(--muted); margin:0 0 20px; }
-    form { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; }
+    form { display:grid; grid-template-columns:repeat(2,1fr); gap:17px 22px; }
     label { color:var(--muted); font:700 12px Arial,sans-serif; }
-    input { display:block; width:100%; margin-top:6px; padding:12px; color:var(--ink); border:1px solid #bcccdc; border-radius:3px; background:#fbfdff; font:16px Georgia,serif; }
-    input:focus { outline:3px solid #ccfbf1; border-color:var(--teal); }
-    button { grid-column:span 2; margin-top:5px; padding:13px 17px; border:0; border-radius:4px; background:var(--teal); color:white; cursor:pointer; font:700 14px Arial,sans-serif; }
-    button:hover { background:#115e59; }
+    .range-head { display:flex; justify-content:space-between; gap:12px; }
+    output { color:var(--teal); font:700 14px Arial,sans-serif; }
+    input[type=range] { display:block; width:100%; margin-top:10px; accent-color:var(--teal); cursor:pointer; }
+    .range-scale { display:flex; justify-content:space-between; color:#829ab1; font:11px Arial,sans-serif; }
     .result { min-height:220px; background:#e7f5f2; border-color:#99f6e4; }
     .result h2 { color:var(--teal); }
     .result-value { font-size:29px; line-height:1.1; margin:28px 0 12px; }
@@ -43,31 +43,30 @@
     </nav>
     <div class="eyebrow">Water potability / inference</div>
     <h1>Test a water sample.</h1>
-    <p class="subtitle">Enter the nine measurements used by the currently selected model and get a prediction from the live FastAPI service.</p>
+    <p class="subtitle">Tune the nine measurements and watch the selected model respond in real time.</p>
   </header>
   <main>
     <div class="layout">
       <section class="panel">
         <h2>Sample measurements</h2>
-        <p class="note">Use numeric values. The defaults are representative values for a quick check.</p>
+        <p class="note">Move any slider to send a fresh sample to the live prediction service.</p>
         <form id="prediction-form">
-          <label>pH<input name="ph" type="number" step="any" value="7.0" required></label>
-          <label>Hardness<input name="Hardness" type="number" step="any" value="200" required></label>
-          <label>Solids<input name="Solids" type="number" step="any" value="20000" required></label>
-          <label>Chloramines<input name="Chloramines" type="number" step="any" value="7" required></label>
-          <label>Sulfate<input name="Sulfate" type="number" step="any" value="300" required></label>
-          <label>Conductivity<input name="Conductivity" type="number" step="any" value="450" required></label>
-          <label>Organic carbon<input name="Organic_carbon" type="number" step="any" value="15" required></label>
-          <label>Trihalomethanes<input name="Trihalomethanes" type="number" step="any" value="60" required></label>
-          <label>Turbidity<input name="Turbidity" type="number" step="any" value="3.5" required></label>
-          <button type="submit">Run prediction</button>
+          <label><span class="range-head"><span>pH</span><output for="ph">7.0</output></span><input id="ph" name="ph" type="range" min="0" max="14" step="0.1" value="7.0"><span class="range-scale"><span>0</span><span>14</span></span></label>
+          <label><span class="range-head"><span>Hardness</span><output for="Hardness">200</output></span><input id="Hardness" name="Hardness" type="range" min="47" max="324" step="1" value="200"><span class="range-scale"><span>47</span><span>324</span></span></label>
+          <label><span class="range-head"><span>Solids</span><output for="Solids">20000</output></span><input id="Solids" name="Solids" type="range" min="320" max="61300" step="100" value="20000"><span class="range-scale"><span>320</span><span>61,300</span></span></label>
+          <label><span class="range-head"><span>Chloramines</span><output for="Chloramines">7</output></span><input id="Chloramines" name="Chloramines" type="range" min="0.3" max="13.2" step="0.1" value="7"><span class="range-scale"><span>0.3</span><span>13.2</span></span></label>
+          <label><span class="range-head"><span>Sulfate</span><output for="Sulfate">300</output></span><input id="Sulfate" name="Sulfate" type="range" min="129" max="482" step="1" value="300"><span class="range-scale"><span>129</span><span>482</span></span></label>
+          <label><span class="range-head"><span>Conductivity</span><output for="Conductivity">450</output></span><input id="Conductivity" name="Conductivity" type="range" min="181" max="754" step="1" value="450"><span class="range-scale"><span>181</span><span>754</span></span></label>
+          <label><span class="range-head"><span>Organic carbon</span><output for="Organic_carbon">15</output></span><input id="Organic_carbon" name="Organic_carbon" type="range" min="2" max="29" step="0.1" value="15"><span class="range-scale"><span>2</span><span>29</span></span></label>
+          <label><span class="range-head"><span>Trihalomethanes</span><output for="Trihalomethanes">60</output></span><input id="Trihalomethanes" name="Trihalomethanes" type="range" min="0" max="125" step="1" value="60"><span class="range-scale"><span>0</span><span>125</span></span></label>
+          <label><span class="range-head"><span>Turbidity</span><output for="Turbidity">3.5</output></span><input id="Turbidity" name="Turbidity" type="range" min="1.4" max="6.8" step="0.1" value="3.5"><span class="range-scale"><span>1.4</span><span>6.8</span></span></label>
         </form>
       </section>
       <aside class="panel result" id="result" aria-live="polite">
         <div class="eyebrow">Model response</div>
         <h2>Ready for a sample</h2>
         <p class="result-value">No prediction yet</p>
-        <p>Results appear here after the form is submitted. This calls the same <code>POST /predict</code> endpoint documented in the API.</p>
+        <p>Results update as you move a slider. This calls the same <code>POST /predict</code> endpoint documented in the API.</p>
       </aside>
     </div>
     <footer>Need the raw API contract? Visit <a href="/docs">/docs</a>. Return to the <a href="/">project overview</a>.</footer>
@@ -75,8 +74,10 @@
   <script>
     const form = document.getElementById('prediction-form');
     const result = document.getElementById('result');
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
+    const sliders = [...form.querySelectorAll('input[type="range"]')];
+    let requestNumber = 0;
+    async function predict() {
+      const currentRequest = ++requestNumber;
       const payload = Object.fromEntries(new FormData(form).entries());
       Object.keys(payload).forEach(key => payload[key] = Number(payload[key]));
       result.innerHTML = '<div class="eyebrow">Model response</div><h2>Running...</h2><p class="result-value">Evaluating sample</p>';
@@ -84,11 +85,17 @@
         const response = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || 'Prediction request failed');
-        result.innerHTML = `<div class="eyebrow">Model response</div><h2>Prediction complete</h2><p class="result-value">${data.prediction}</p><p>The trained model evaluated all nine supplied measurements.</p>`;
+        if (currentRequest !== requestNumber) return;
+        result.innerHTML = `<div class="eyebrow">${data.model} response</div><h2>Prediction complete</h2><p class="result-value">${data.prediction}</p><p>The best test-accuracy model evaluated all nine supplied measurements.</p>`;
       } catch (error) {
         result.innerHTML = `<div class="error">${error.message}</div>`;
       }
+    }
+    sliders.forEach(slider => {
+      const output = form.querySelector(`output[for="${slider.id}"]`);
+      slider.addEventListener('input', () => { output.value = slider.value; output.textContent = slider.value; predict(); });
     });
+    predict();
   </script>
 </body>
 </html>

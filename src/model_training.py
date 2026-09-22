@@ -18,7 +18,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 def parse_args():
 	parser = argparse.ArgumentParser(description="Train and track a classification model")
 	parser.add_argument("--params-file", type=Path, default=ROOT_DIR / "params.yaml")
-	parser.add_argument("--model-type", choices=["random_forest", "xgboost"])
+	parser.add_argument("--model-type", choices=["random_forest", "xgboost", "both"])
 	parser.add_argument("--n-estimators", type=int)
 	parser.add_argument("--max-depth", type=int)
 	parser.add_argument("--random-state", type=int)
@@ -78,21 +78,39 @@ def main():
 	mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "water-potability"))
 
 	train_data = pd.read_csv(ROOT_DIR / "data/processed/train_processed.csv")
+	test_data = pd.read_csv(ROOT_DIR / "data/processed/test_processed.csv")
 	X_train = train_data.drop(columns=["Potability"])
 	y_train = train_data["Potability"].values
+	X_test = test_data.drop(columns=["Potability"])
+	y_test = test_data["Potability"].values
+	model_types = ["random_forest", "xgboost"] if params["model_type"] == "both" else [params["model_type"]]
+	best_model = None
+	best_accuracy = -1.0
+	best_run_id = None
 
-	with mlflow.start_run() as run:
-		clf = build_model(params)
-		clf.fit(X_train, y_train)
-		predictions = clf.predict(X_train)
-		mlflow.log_params(params)
-		mlflow.log_metric("train_accuracy", accuracy_score(y_train, predictions))
-		mlflow.log_metric("train_f1_score", f1_score(y_train, predictions, zero_division=0))
-		mlflow.sklearn.log_model(clf, "model")
-		(ROOT_DIR / ".mlflow_run_id").write_text(run.info.run_id)
+	for model_type in model_types:
+		trial_params = {**params, "model_type": model_type}
+		with mlflow.start_run() as run:
+			clf = build_model(trial_params)
+			clf.fit(X_train, y_train)
+			predictions = clf.predict(X_train)
+			test_predictions = clf.predict(X_test)
+			test_accuracy = accuracy_score(y_test, test_predictions)
+			mlflow.log_params(trial_params)
+			mlflow.log_metric("train_accuracy", accuracy_score(y_train, predictions))
+			mlflow.log_metric("train_f1_score", f1_score(y_train, predictions, zero_division=0))
+			mlflow.log_metric("test_accuracy", test_accuracy)
+			mlflow.log_metric("test_f1_score", f1_score(y_test, test_predictions, zero_division=0))
+			mlflow.sklearn.log_model(clf, "model")
+			if test_accuracy > best_accuracy:
+				best_model = clf
+				best_accuracy = test_accuracy
+				best_run_id = run.info.run_id
+
+	(ROOT_DIR / ".mlflow_run_id").write_text(best_run_id)
 
 	with (ROOT_DIR / "model.pkl").open("wb") as model_file:
-		pickle.dump(clf, model_file)
+		pickle.dump(best_model, model_file)
 
 
 if __name__ == "__main__":

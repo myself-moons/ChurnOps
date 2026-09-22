@@ -28,6 +28,7 @@ TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
 
 with MODEL_PATH.open("rb") as f:
     model = pickle.load(f)
+SELECTED_MODEL = type(model).__name__
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -36,6 +37,8 @@ def index():
 
 
 def _dataset_summary(path: Path):
+    if not path.exists() and path.name == "train.csv":
+        path = BASE_DIR / "water_potability (1).csv"
     if not path.exists():
         return {"available": False, "rows": 0, "features": 0, "missing_values": 0}
 
@@ -114,6 +117,7 @@ def dashboard_data():
         "results": metrics,
         "tracking": {
             "experiment": "water-potability",
+            "selected_model": SELECTED_MODEL,
             "run_count": len(runs),
             "finished_count": sum(run["status"] == "FINISHED" for run in runs),
             "latest_run": latest_run,
@@ -156,4 +160,4 @@ def model_predict(payload: Water):
 
     predicted_value = int(model.predict(sample)[0])
     prediction = "Water is Consumable" if predicted_value == 1 else "Water is not Consumable"
-    return {"prediction": prediction}
+    return {"prediction": prediction, "model": SELECTED_MODEL}
