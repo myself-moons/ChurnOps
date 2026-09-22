@@ -11,7 +11,8 @@ FastAPI overview, prediction UI, and experiment dashboard
 
 The project supports both `random_forest` and `xgboost` without replacing
 historical runs. DVC controls the pipeline and parameters, MLflow records each
-trial, Jenkins automates validation, and FastAPI exposes the results.
+trial in the versioned `mlruns/` directory, Jenkins automates validation, and
+FastAPI exposes the results.
 
 ## Quick start
 
@@ -25,6 +26,10 @@ python -m pip install -r requirements.txt
 dvc dag
 dvc repro
 pytest -q
+
+git add dvc.lock metrics.json mlruns model.pkl params.yaml
+git commit -m "Train models and update tracked runs"
+git push origin main
 ```
 
 Runbook: [Steps_for_Pipeline](Steps_for_Pipeline)
@@ -86,9 +91,9 @@ should set `MLFLOW_TRACKING_URI` to a persistent MLflow server before running
 ## Deploy on Render
 
 This repository includes [render.yaml](render.yaml) for a Render Blueprint.
-The web service uses Python 3.12, installs `requirements.txt`, rebuilds the
-ignored DVC output files from the committed source dataset, and starts FastAPI
-on Render's `$PORT`.
+The web service uses Python 3.12, installs `requirements.txt`, loads the
+committed `model.pkl` and `mlruns/` history, and starts FastAPI on Render's
+`$PORT`.
 
 ### Blueprint deployment
 
@@ -103,10 +108,8 @@ prediction API is `POST /predict`.
 The default configuration uses Render's free plan and Oregon region. Change
 `plan` or `region` in `render.yaml` before deploying if needed. No secret
 environment variables are required. `MLFLOW_TRACKING_URI` is intentionally
-unset, so MLflow uses the service's local filesystem during the build.
-Render's free service filesystem is ephemeral; use a hosted MLflow tracking
-server and set `MLFLOW_TRACKING_URI` in Render if experiment history must
-survive redeploys.
+unset, so MLflow reads the committed `mlruns/` directory. Render's filesystem
+is ephemeral, but the history is restored from Git on every deployment.
 
 ### Manual web-service settings
 
@@ -117,7 +120,7 @@ use:
 | --- | --- |
 | Runtime | Python 3 |
 | Python version | `3.12.3` |
-| Build command | `pip install -r requirements.txt && python src/data_collection.py && python src/data_preprocessing.py && python src/model_training.py && python src/model_evaluation.py` |
+| Build command | `pip install -r requirements.txt` |
 | Start command | `uvicorn src.main:app --host 0.0.0.0 --port $PORT` |
 | Health check path | `/docs` |
 
@@ -148,7 +151,7 @@ For setup details and common errors, use [Steps_for_Pipeline](Steps_for_Pipeline
 - `src/main.py`: FastAPI routes and dashboard data APIs
 - `src/landing.html`, `src/dashboard.html`, `src/predict.html`: web views
 - `tests/test_api.py`: API and page regression tests
-- `mlruns/`: local MLflow tracking store, ignored by Git
+- `mlruns/`: versioned MLflow tracking store containing pushed run history
 
 ## License and data note
 

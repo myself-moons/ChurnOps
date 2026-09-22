@@ -3,7 +3,6 @@ stages:
     cmd: python src/data_collection.py
     deps:
       - src/data_collection.py
-    outs:
       - data/raw/train.csv
       - data/raw/test.csv
 
@@ -18,7 +17,7 @@ stages:
       - data/processed/test_processed.csv
 
   Model_Training:
-    cmd: python src/model_training.py
+    cmd: python src/model_training.py --model-type both
     deps:
       - data/processed/train_processed.csv
       - data/processed/test_processed.csv
@@ -26,7 +25,6 @@ stages:
     params:
       - model
     outs:
-      - model.pkl
       - .mlflow_run_id
 
   Evaluation:
@@ -35,5 +33,3 @@ stages:
       - model.pkl
       - .mlflow_run_id
       - src/model_evaluation.py
-    outs:
-      - metrics.json

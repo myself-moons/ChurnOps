@@ -106,6 +106,16 @@ dvc repro
 
 DVC reuses unchanged data stages and reruns training/evaluation. Each training
 execution creates a new MLflow run; previous model-family runs are preserved.
+The MLflow store is versioned, so push it with the selected model and metrics:
+
+```bash
+git add dvc.lock metrics.json mlruns model.pkl params.yaml
+git commit -m "Train models and update tracked runs"
+git push origin main
+```
+
+Render deploys the pushed model and displays the complete history from the
+pushed `mlruns/` directory. Render does not retrain models during deployment.
 
 For a one-off trial without editing `params.yaml`:
 

@@ -3,11 +3,6 @@ stages:
   Data_Collection:
     cmd: python src/data_collection.py
     deps:
-    - path: src/data_collection.py
-      hash: md5
-      md5: aed6f82c6cfdbd1b728294939c1f35dd
-      size: 957
-    outs:
     - path: data/raw/test.csv
       hash: md5
       md5: 3b2bb40b6d4444789e27ad95cd833a45
@@ -16,6 +11,10 @@ stages:
       hash: md5
       md5: aedc5dad6f23da8c1435614df438240d
       size: 414908
+    - path: src/data_collection.py
+      hash: md5
+      md5: aed6f82c6cfdbd1b728294939c1f35dd
+      size: 957
   Data_Preprocessing:
     cmd: python src/data_preprocessing.py
     deps:
@@ -41,7 +40,7 @@ stages:
       md5: 06e435e51d497d249d0c7bafc330f51c
       size: 434078
   Model_Training:
-    cmd: python src/model_training.py
+    cmd: python src/model_training.py --model-type both
     deps:
     - path: data/processed/test_processed.csv
       hash: md5
@@ -53,8 +52,8 @@ stages:
       size: 434078
     - path: src/model_training.py
       hash: md5
-      md5: fa1c781a54f80ea46fcfc173f7946f19
-      size: 3196
+      md5: 10c6c6696a5bb689c4c463cb9e78b010
+      size: 4015
     params:
       params.yaml:
         model:
@@ -68,23 +67,19 @@ stages:
     outs:
     - path: .mlflow_run_id
       hash: md5
-      md5: b3d8bd5b56d3ab96cdc71f4d3c5196d2
+      md5: 2b96c7addec57817c57f2a1f03431856
       size: 32
-    - path: model.pkl
-      hash: md5
-      md5: ed2742c189bbeecb3bf64fed9a60f8d3
-      size: 433959
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
     - path: .mlflow_run_id
       hash: md5
-      md5: b3d8bd5b56d3ab96cdc71f4d3c5196d2
+      md5: 2b96c7addec57817c57f2a1f03431856
       size: 32
     - path: model.pkl
       hash: md5
-      md5: ed2742c189bbeecb3bf64fed9a60f8d3
-      size: 433959
+      md5: 7c014f230505425a2f843b095903c2c9
+      size: 924529
     - path: src/model_evaluation.py
       hash: md5
       md5: c30787565f7992ef746a5d4d4c71bf43
@@ -92,5 +87,5 @@ stages:
     outs:
     - path: metrics.json
       hash: md5
-      md5: 8975e9f8cb7f778d83d19c8b1873eb3d
-      size: 140
+      md5: 7cec46779615731b5f00546c6f46cec8
+      size: 141

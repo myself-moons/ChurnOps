@@ -1,5 +1,3 @@
-/metrics.json
 /.mlflow_run_id
-/mlruns/
 /data/raw/
 /data/processed/

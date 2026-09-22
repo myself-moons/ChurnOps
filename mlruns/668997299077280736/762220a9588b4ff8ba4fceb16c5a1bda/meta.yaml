@@ -1,0 +1,15 @@
+artifact_uri: file:///workspaces/WaterOps/mlruns/668997299077280736/762220a9588b4ff8ba4fceb16c5a1bda/artifacts
+end_time: 1790059820529
+entry_point_name: ''
+experiment_id: '668997299077280736'
+lifecycle_stage: active
+run_id: 762220a9588b4ff8ba4fceb16c5a1bda
+run_name: intrigued-quail-403
+run_uuid: 762220a9588b4ff8ba4fceb16c5a1bda
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790059817758
+status: 3
+tags: []
+user_id: codespace

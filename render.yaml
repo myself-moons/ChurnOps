@@ -4,12 +4,7 @@ services:
     runtime: python
     plan: free
     region: oregon
-    buildCommand: >-
-      pip install -r requirements.txt &&
-      python src/data_collection.py &&
-      python src/data_preprocessing.py &&
-      python src/model_training.py --model-type both &&
-      python src/model_evaluation.py
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /docs
     envVars:

@@ -1,0 +1,15 @@
+artifact_uri: file:///workspaces/WaterOps/mlruns/668997299077280736/c12d51086ac5415e8890cf7a5bd5b5c1/artifacts
+end_time: 1790059794643
+entry_point_name: ''
+experiment_id: '668997299077280736'
+lifecycle_stage: active
+run_id: c12d51086ac5415e8890cf7a5bd5b5c1
+run_name: capable-owl-719
+run_uuid: c12d51086ac5415e8890cf7a5bd5b5c1
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790059791100
+status: 3
+tags: []
+user_id: codespace

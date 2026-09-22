@@ -1,0 +1,15 @@
+artifact_uri: file:///workspaces/WaterOps/mlruns/668997299077280736/d11d398103884b308efa172e34a0d675/artifacts
+end_time: 1790059797157
+entry_point_name: ''
+experiment_id: '668997299077280736'
+lifecycle_stage: active
+run_id: d11d398103884b308efa172e34a0d675
+run_name: defiant-crab-905
+run_uuid: d11d398103884b308efa172e34a0d675
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790059794647
+status: 3
+tags: []
+user_id: codespace
