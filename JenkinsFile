@@ -32,7 +32,7 @@ pipeline {
 
         stage('Archive results') {
             steps {
-                archiveArtifacts artifacts: 'metrics.json,model.pkl', fingerprint: true
+                archiveArtifacts artifacts: 'metrics.json,model.pkl,preprocessor.pkl', fingerprint: true
             }
         }
     }

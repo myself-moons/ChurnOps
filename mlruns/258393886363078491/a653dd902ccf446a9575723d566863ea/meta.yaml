@@ -1,0 +1,15 @@
+artifact_uri: file:C:\Users\kes\.gemini\antigravity\scratch\WaterOps\mlruns/258393886363078491/a653dd902ccf446a9575723d566863ea/artifacts
+end_time: 1790241900955
+entry_point_name: ''
+experiment_id: '258393886363078491'
+lifecycle_stage: active
+run_id: a653dd902ccf446a9575723d566863ea
+run_name: logistic_regression
+run_uuid: a653dd902ccf446a9575723d566863ea
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790241898134
+status: 3
+tags: []
+user_id: kes

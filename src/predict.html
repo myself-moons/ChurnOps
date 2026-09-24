@@ -3,99 +3,335 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Water Potability | Predict</title>
+  <title>ChurnOps | Predict</title>
+  <meta name="description" content="ChurnOps customer churn prediction form — enter customer details and get an instant churn probability.">
   <style>
-    :root { --ink:#102a43; --muted:#627d98; --line:#d9e2ec; --paper:#f5f7f9; --white:#fff; --teal:#0f766e; --gold:#f59e0b; --red:#b42318; --shadow:0 16px 40px rgba(16,42,67,.08); }
+    :root {
+      --ink:#1a1f36; --muted:#6b7280; --line:#e5e7eb; --paper:#f8fafc;
+      --white:#fff; --indigo:#4f46e5; --amber:#f59e0b;
+      --red:#dc2626; --green:#16a34a; --shadow:0 16px 40px rgba(26,31,54,.08);
+    }
     * { box-sizing:border-box; }
-    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.5 Georgia, 'Times New Roman', serif; }
-    .topbar { background:var(--ink); color:white; padding:22px clamp(20px,6vw,88px) 28px; border-bottom:5px solid var(--gold); }
-    nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:38px; font:700 12px Arial,sans-serif; }
-    nav a { color:#d9e2ec; text-decoration:none; padding:8px 11px; border:1px solid transparent; border-radius:4px; }
-    nav a:hover, nav a.active { color:white; border-color:#486581; background:#243b53; }
-    .eyebrow { color:#7dd3fc; text-transform:uppercase; letter-spacing:.14em; font:700 11px/1.2 Arial,sans-serif; margin-bottom:9px; }
-    h1 { font-size:clamp(34px,6vw,62px); line-height:.95; margin:0 0 14px; }
-    .subtitle { color:#bcccdc; max-width:650px; margin:0; font-size:17px; }
-    main { max-width:1100px; margin:0 auto; padding:32px clamp(20px,6vw,88px) 60px; }
-    .layout { display:grid; grid-template-columns:1.2fr .8fr; gap:18px; align-items:start; }
-    .panel { background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:5px; padding:23px; }
-    .panel h2 { margin:0 0 5px; font-size:22px; }
-    .note { color:var(--muted); margin:0 0 20px; }
-    form { display:grid; grid-template-columns:repeat(2,1fr); gap:17px 22px; }
-    label { color:var(--muted); font:700 12px Arial,sans-serif; }
-    .range-head { display:flex; justify-content:space-between; gap:12px; }
-    output { color:var(--teal); font:700 14px Arial,sans-serif; }
-    input[type=range] { display:block; width:100%; margin-top:10px; accent-color:var(--teal); cursor:pointer; }
-    .range-scale { display:flex; justify-content:space-between; color:#829ab1; font:11px Arial,sans-serif; }
-    .result { min-height:220px; background:#e7f5f2; border-color:#99f6e4; }
-    .result h2 { color:var(--teal); }
-    .result-value { font-size:29px; line-height:1.1; margin:28px 0 12px; }
-    .result p { color:#365c64; }
-    .error { color:var(--red); background:#fff1f2; border:1px solid #fecdd3; padding:12px; border-radius:4px; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.6 system-ui,sans-serif; }
+    .topbar { background:var(--ink); color:white; padding:22px clamp(20px,6vw,88px) 28px; border-bottom:4px solid var(--indigo); }
+    nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:36px; font:700 12px sans-serif; }
+    nav a { color:#9ca3af; text-decoration:none; padding:7px 12px; border:1px solid transparent; border-radius:6px; }
+    nav a:hover, nav a.active { color:white; border-color:#4f46e5; background:#312e81; }
+    .eyebrow { color:#818cf8; text-transform:uppercase; letter-spacing:.14em; font:700 11px sans-serif; margin-bottom:9px; }
+    h1 { font-size:clamp(30px,5vw,54px); line-height:1.05; margin:0 0 12px; font-weight:800; }
+    .subtitle { color:#93c5fd; max-width:680px; margin:0; font-size:16px; }
+    main { max-width:1200px; margin:0 auto; padding:32px clamp(20px,6vw,88px) 60px; }
+    .layout { display:grid; grid-template-columns:1.4fr 0.6fr; gap:20px; align-items:start; }
+    .panel { background:var(--white); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:8px; padding:24px; }
+    .panel h2 { margin:0 0 4px; font-size:20px; font-weight:700; }
+    .note { color:var(--muted); margin:0 0 22px; font-size:14px; }
+    .section-label { font:700 12px sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--indigo); margin:20px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+    .fields { display:grid; grid-template-columns:repeat(2,1fr); gap:14px 20px; }
+    .field { display:flex; flex-direction:column; gap:5px; }
+    label { color:var(--muted); font:700 12px sans-serif; }
+    select, input[type=number] {
+      padding:9px 12px; border:1px solid var(--line); border-radius:6px;
+      font:14px system-ui; color:var(--ink); background:var(--white);
+      width:100%; transition:border-color .15s;
+    }
+    select:focus, input[type=number]:focus { outline:none; border-color:var(--indigo); box-shadow:0 0 0 3px #e0e7ff; }
+    .submit-row { margin-top:20px; }
+    button[type=submit] {
+      background:var(--indigo); color:white; border:none; padding:12px 28px;
+      border-radius:6px; font:700 15px system-ui; cursor:pointer; transition:background .15s;
+    }
+    button[type=submit]:hover { background:#3730a3; }
+    button[type=submit]:disabled { background:#9ca3af; cursor:default; }
+    /* Result panel */
+    .result { min-height:240px; position:sticky; top:24px; }
+    .result-idle { color:var(--muted); text-align:center; padding:40px 20px; }
+    .result-idle svg { display:block; margin:0 auto 16px; opacity:.3; }
+    .result-churn  { background:#fef2f2; border-color:#fca5a5; }
+    .result-stay   { background:#f0fdf4; border-color:#86efac; }
+    .prob-bar-wrap { margin:16px 0; }
+    .prob-label { display:flex; justify-content:space-between; font:700 13px sans-serif; margin-bottom:6px; }
+    .prob-bar  { height:12px; background:#e5e7eb; border-radius:4px; overflow:hidden; }
+    .prob-bar span { display:block; height:100%; border-radius:4px; transition:width .5s; }
+    .churn-high  .prob-bar span { background:var(--red); }
+    .churn-low   .prob-bar span { background:var(--green); }
+    .verdict { font-size:22px; font-weight:800; margin:12px 0 6px; }
+    .verdict.churn { color:var(--red); }
+    .verdict.stay  { color:var(--green); }
+    .meta { font-size:13px; color:var(--muted); }
+    .error-box { color:var(--red); background:#fee2e2; border:1px solid #fca5a5; padding:12px; border-radius:6px; font-size:14px; }
     footer { color:var(--muted); margin-top:22px; font-size:13px; }
-    @media(max-width:760px) { .layout { grid-template-columns:1fr; } }
-    @media(max-width:480px) { form { grid-template-columns:1fr; } button { grid-column:span 1; } }
+    @media(max-width:860px) { .layout { grid-template-columns:1fr; } .result { position:static; } }
+    @media(max-width:540px) { .fields { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
   <header class="topbar">
     <nav aria-label="Main navigation">
-      <a href="/">Overview</a><a href="/dashboard">MLflow dashboard</a><a class="active" href="/predict">Predict</a><a href="/docs">API docs</a>
+      <a href="/">Overview</a>
+      <a href="/dashboard">MLflow Dashboard</a>
+      <a class="active" href="/predict">Predict</a>
+      <a href="/docs">API Docs</a>
     </nav>
-    <div class="eyebrow">Water potability / inference</div>
-    <h1>Test a water sample.</h1>
-    <p class="subtitle">Tune the nine measurements and watch the selected model respond in real time.</p>
+    <div class="eyebrow">ChurnOps / Customer Inference</div>
+    <h1>Predict Customer Churn.</h1>
+    <p class="subtitle">Fill in the customer profile and click Predict to get the churn probability from the selected model.</p>
   </header>
   <main>
     <div class="layout">
+      <!-- Form panel -->
       <section class="panel">
-        <h2>Sample measurements</h2>
-        <p class="note">Move any slider to send a fresh sample to the live prediction service.</p>
-        <form id="prediction-form">
-          <label><span class="range-head"><span>pH</span><output for="ph">7.0</output></span><input id="ph" name="ph" type="range" min="0" max="14" step="0.1" value="7.0"><span class="range-scale"><span>0</span><span>14</span></span></label>
-          <label><span class="range-head"><span>Hardness</span><output for="Hardness">200</output></span><input id="Hardness" name="Hardness" type="range" min="47" max="324" step="1" value="200"><span class="range-scale"><span>47</span><span>324</span></span></label>
-          <label><span class="range-head"><span>Solids</span><output for="Solids">20000</output></span><input id="Solids" name="Solids" type="range" min="320" max="61300" step="100" value="20000"><span class="range-scale"><span>320</span><span>61,300</span></span></label>
-          <label><span class="range-head"><span>Chloramines</span><output for="Chloramines">7</output></span><input id="Chloramines" name="Chloramines" type="range" min="0.3" max="13.2" step="0.1" value="7"><span class="range-scale"><span>0.3</span><span>13.2</span></span></label>
-          <label><span class="range-head"><span>Sulfate</span><output for="Sulfate">300</output></span><input id="Sulfate" name="Sulfate" type="range" min="129" max="482" step="1" value="300"><span class="range-scale"><span>129</span><span>482</span></span></label>
-          <label><span class="range-head"><span>Conductivity</span><output for="Conductivity">450</output></span><input id="Conductivity" name="Conductivity" type="range" min="181" max="754" step="1" value="450"><span class="range-scale"><span>181</span><span>754</span></span></label>
-          <label><span class="range-head"><span>Organic carbon</span><output for="Organic_carbon">15</output></span><input id="Organic_carbon" name="Organic_carbon" type="range" min="2" max="29" step="0.1" value="15"><span class="range-scale"><span>2</span><span>29</span></span></label>
-          <label><span class="range-head"><span>Trihalomethanes</span><output for="Trihalomethanes">60</output></span><input id="Trihalomethanes" name="Trihalomethanes" type="range" min="0" max="125" step="1" value="60"><span class="range-scale"><span>0</span><span>125</span></span></label>
-          <label><span class="range-head"><span>Turbidity</span><output for="Turbidity">3.5</output></span><input id="Turbidity" name="Turbidity" type="range" min="1.4" max="6.8" step="0.1" value="3.5"><span class="range-scale"><span>1.4</span><span>6.8</span></span></label>
+        <h2>Customer Profile</h2>
+        <p class="note">All fields are required. Values must match the categories used during training.</p>
+        <form id="predict-form">
+
+          <div class="section-label">Demographics</div>
+          <div class="fields">
+            <div class="field">
+              <label for="Gender">Gender</label>
+              <select id="Gender" name="Gender"><option>Male</option><option>Female</option></select>
+            </div>
+            <div class="field">
+              <label for="Age">Age</label>
+              <input type="number" id="Age" name="Age" min="18" max="100" value="40">
+            </div>
+            <div class="field">
+              <label for="Married">Married</label>
+              <select id="Married" name="Married"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Number_of_Dependents">Number of Dependents</label>
+              <input type="number" id="Number_of_Dependents" name="Number of Dependents" min="0" max="10" value="0">
+            </div>
+            <div class="field">
+              <label for="Satisfaction_Score">Satisfaction Score (1–5)</label>
+              <input type="number" id="Satisfaction_Score" name="Satisfaction Score" min="1" max="5" value="3">
+            </div>
+          </div>
+
+          <div class="section-label">Services &amp; Contract</div>
+          <div class="fields">
+            <div class="field">
+              <label for="Tenure_in_Months">Tenure (months)</label>
+              <input type="number" id="Tenure_in_Months" name="Tenure in Months" min="0" max="120" value="24">
+            </div>
+            <div class="field">
+              <label for="Contract">Contract Type</label>
+              <select id="Contract" name="Contract">
+                <option>Month-to-Month</option><option>One Year</option><option>Two Year</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="Offer">Offer</label>
+              <select id="Offer" name="Offer">
+                <option>No Offer</option><option>Offer A</option><option>Offer B</option>
+                <option>Offer C</option><option>Offer D</option><option>Offer E</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="Paperless_Billing">Paperless Billing</label>
+              <select id="Paperless_Billing" name="Paperless Billing"><option>Yes</option><option>No</option></select>
+            </div>
+            <div class="field">
+              <label for="Payment_Method">Payment Method</label>
+              <select id="Payment_Method" name="Payment Method">
+                <option>Bank Withdrawal</option><option>Credit Card</option><option>Mailed Check</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="Referred_a_Friend">Referred a Friend</label>
+              <select id="Referred_a_Friend" name="Referred a Friend"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Number_of_Referrals">Number of Referrals</label>
+              <input type="number" id="Number_of_Referrals" name="Number of Referrals" min="0" max="20" value="0">
+            </div>
+          </div>
+
+          <div class="section-label">Phone &amp; Internet</div>
+          <div class="fields">
+            <div class="field">
+              <label for="Phone_Service">Phone Service</label>
+              <select id="Phone_Service" name="Phone Service"><option>Yes</option><option>No</option></select>
+            </div>
+            <div class="field">
+              <label for="Multiple_Lines">Multiple Lines</label>
+              <select id="Multiple_Lines" name="Multiple Lines"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Internet_Service">Internet Service</label>
+              <select id="Internet_Service" name="Internet Service"><option>Yes</option><option>No</option></select>
+            </div>
+            <div class="field">
+              <label for="Internet_Type">Internet Type</label>
+              <select id="Internet_Type" name="Internet Type">
+                <option>Fiber Optic</option><option>DSL</option><option>Cable</option><option>None</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="Online_Security">Online Security</label>
+              <select id="Online_Security" name="Online Security"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Online_Backup">Online Backup</label>
+              <select id="Online_Backup" name="Online Backup"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Device_Protection_Plan">Device Protection Plan</label>
+              <select id="Device_Protection_Plan" name="Device Protection Plan"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Premium_Tech_Support">Premium Tech Support</label>
+              <select id="Premium_Tech_Support" name="Premium Tech Support"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Unlimited_Data">Unlimited Data</label>
+              <select id="Unlimited_Data" name="Unlimited Data"><option>Yes</option><option>No</option></select>
+            </div>
+            <div class="field">
+              <label for="Avg_Monthly_GB_Download">Avg Monthly GB Download</label>
+              <input type="number" id="Avg_Monthly_GB_Download" name="Avg Monthly GB Download" min="0" max="200" value="15">
+            </div>
+          </div>
+
+          <div class="section-label">Streaming</div>
+          <div class="fields">
+            <div class="field">
+              <label for="Streaming_TV">Streaming TV</label>
+              <select id="Streaming_TV" name="Streaming TV"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Streaming_Movies">Streaming Movies</label>
+              <select id="Streaming_Movies" name="Streaming Movies"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field">
+              <label for="Streaming_Music">Streaming Music</label>
+              <select id="Streaming_Music" name="Streaming Music"><option>No</option><option>Yes</option></select>
+            </div>
+          </div>
+
+          <div class="section-label">Billing &amp; Revenue</div>
+          <div class="fields">
+            <div class="field">
+              <label for="Monthly_Charge">Monthly Charge ($)</label>
+              <input type="number" id="Monthly_Charge" name="Monthly Charge" min="0" step="0.01" value="65.00">
+            </div>
+            <div class="field">
+              <label for="Total_Charges">Total Charges ($)</label>
+              <input type="number" id="Total_Charges" name="Total Charges" min="0" step="0.01" value="1500.00">
+            </div>
+            <div class="field">
+              <label for="Total_Revenue">Total Revenue ($)</label>
+              <input type="number" id="Total_Revenue" name="Total Revenue" min="0" step="0.01" value="1500.00">
+            </div>
+            <div class="field">
+              <label for="Total_Refunds">Total Refunds ($)</label>
+              <input type="number" id="Total_Refunds" name="Total Refunds" min="0" step="0.01" value="0.00">
+            </div>
+            <div class="field">
+              <label for="Total_Extra_Data_Charges">Extra Data Charges ($)</label>
+              <input type="number" id="Total_Extra_Data_Charges" name="Total Extra Data Charges" min="0" step="0.01" value="0.00">
+            </div>
+            <div class="field">
+              <label for="Avg_Monthly_Long_Distance_Charges">Avg Long Distance ($/mo)</label>
+              <input type="number" id="Avg_Monthly_Long_Distance_Charges" name="Avg Monthly Long Distance Charges" min="0" step="0.01" value="20.00">
+            </div>
+            <div class="field">
+              <label for="Total_Long_Distance_Charges">Total Long Distance ($)</label>
+              <input type="number" id="Total_Long_Distance_Charges" name="Total Long Distance Charges" min="0" step="0.01" value="480.00">
+            </div>
+          </div>
+
+          <div class="submit-row">
+            <button type="submit" id="submit-btn">Predict Churn</button>
+          </div>
         </form>
       </section>
-      <aside class="panel result" id="result" aria-live="polite">
-        <div class="eyebrow">Model response</div>
-        <h2>Ready for a sample</h2>
-        <p class="result-value">No prediction yet</p>
-        <p>Results update as you move a slider. This calls the same <code>POST /predict</code> endpoint documented in the API.</p>
+
+      <!-- Result panel -->
+      <aside class="panel result" id="result-panel" aria-live="polite">
+        <div class="eyebrow">Prediction Result</div>
+        <div class="result-idle" id="result-idle">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 8v4l3 3"/>
+          </svg>
+          <p>Fill in the customer profile<br>and click <strong>Predict Churn</strong>.</p>
+        </div>
+        <div id="result-content" style="display:none"></div>
       </aside>
     </div>
-    <footer>Need the raw API contract? Visit <a href="/docs">/docs</a>. Return to the <a href="/">project overview</a>.</footer>
+    <footer>API contract: <a href="/docs">/docs</a>. Return to the <a href="/">project overview</a>.</footer>
   </main>
   <script>
-    const form = document.getElementById('prediction-form');
-    const result = document.getElementById('result');
-    const sliders = [...form.querySelectorAll('input[type="range"]')];
-    let requestNumber = 0;
-    async function predict() {
-      const currentRequest = ++requestNumber;
-      const payload = Object.fromEntries(new FormData(form).entries());
-      Object.keys(payload).forEach(key => payload[key] = Number(payload[key]));
-      result.innerHTML = '<div class="eyebrow">Model response</div><h2>Running...</h2><p class="result-value">Evaluating sample</p>';
-      try {
-        const response = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.detail || 'Prediction request failed');
-        if (currentRequest !== requestNumber) return;
-        result.innerHTML = `<div class="eyebrow">${data.model} response</div><h2>Prediction complete</h2><p class="result-value">${data.prediction}</p><p>The best test-accuracy model evaluated all nine supplied measurements.</p>`;
-      } catch (error) {
-        result.innerHTML = `<div class="error">${error.message}</div>`;
+    const form    = document.getElementById('predict-form');
+    const idle    = document.getElementById('result-idle');
+    const content = document.getElementById('result-content');
+    const panel   = document.getElementById('result-panel');
+    const btn     = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      btn.disabled    = true;
+      btn.textContent = 'Predicting…';
+
+      // Build payload from form — use the label names as keys
+      const raw = new FormData(form);
+      const payload = {};
+      for (const [k, v] of raw.entries()) {
+        // Numeric fields
+        const num = Number(v);
+        payload[k] = isNaN(num) || v === '' ? v : num;
       }
-    }
-    sliders.forEach(slider => {
-      const output = form.querySelector(`output[for="${slider.id}"]`);
-      slider.addEventListener('input', () => { output.value = slider.value; output.textContent = slider.value; predict(); });
+
+      // Integer-only fields
+      const intFields = ['Age','Number of Dependents','Satisfaction Score',
+                         'Number of Referrals','Tenure in Months','Avg Monthly GB Download'];
+      intFields.forEach(f => { if (payload[f] !== undefined) payload[f] = parseInt(payload[f]); });
+
+      idle.style.display    = 'none';
+      content.style.display = 'block';
+      content.innerHTML     = '<p style="color:var(--muted)">Running model…</p>';
+      panel.className       = 'panel result';
+
+      try {
+        const res  = await fetch('/predict', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        const prob    = data.churn_probability;
+        const pct     = (prob * 100).toFixed(1);
+        const isChurn = data.churn;
+        panel.className = `panel result ${isChurn ? 'result-churn' : 'result-stay'}`;
+
+        content.innerHTML = `
+          <div class="verdict ${isChurn ? 'churn':'stay'}">
+            ${isChurn ? '⚠ Likely to Churn' : '✓ Likely to Stay'}
+          </div>
+          <div class="prob-bar-wrap ${isChurn ? 'churn-high':'churn-low'}">
+            <div class="prob-label">
+              <span>Churn probability</span><span><strong>${pct}%</strong></span>
+            </div>
+            <div class="prob-bar"><span style="width:${pct}%"></span></div>
+          </div>
+          <div class="meta">
+            <p>Model: <strong>${data.model}</strong></p>
+            <p>Latency: ${data.latency_ms} ms</p>
+            <p style="margin-top:10px;font-size:12px;color:var(--muted)">
+              Probability reflects the model's confidence that this customer churns.
+              Threshold: 0.5 (adjustable for business use cases).
+            </p>
+          </div>`;
+      } catch(err) {
+        panel.className = 'panel result';
+        content.innerHTML = `<div class="error-box"><strong>Error:</strong> ${err.message}</div>`;
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Predict Churn';
+      }
     });
-    predict();
   </script>
 </body>
 </html>

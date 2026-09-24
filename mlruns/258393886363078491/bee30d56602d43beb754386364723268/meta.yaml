@@ -1,0 +1,15 @@
+artifact_uri: file:C:\Users\kes\.gemini\antigravity\scratch\WaterOps\mlruns/258393886363078491/bee30d56602d43beb754386364723268/artifacts
+end_time: 1790241743479
+entry_point_name: ''
+experiment_id: '258393886363078491'
+lifecycle_stage: active
+run_id: bee30d56602d43beb754386364723268
+run_name: xgboost
+run_uuid: bee30d56602d43beb754386364723268
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790241741159
+status: 3
+tags: []
+user_id: kes

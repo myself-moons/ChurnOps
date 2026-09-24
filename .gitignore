@@ -1,3 +1,10 @@
 /.mlflow_run_id
 /data/raw/
 /data/processed/
+/model.pkl
+/preprocessor.pkl
+/metrics.json
+/predictions.jsonl
+/.venv/
+/__pycache__/
+/src/__pycache__/

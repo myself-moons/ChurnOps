@@ -3,84 +3,124 @@ stages:
   Data_Collection:
     cmd: python src/data_collection.py
     deps:
-    - path: data/raw/test.csv
+    - path: Churn_Data/Demographics.xlsx
       hash: md5
-      md5: 3b2bb40b6d4444789e27ad95cd833a45
-      size: 104076
-    - path: data/raw/train.csv
+      md5: 85fb796f1b2c95fb2857c094d627a91e
+      size: 300878
+    - path: Churn_Data/Location.xlsx
       hash: md5
-      md5: aedc5dad6f23da8c1435614df438240d
-      size: 414908
+      md5: 392063b0562d2cb070f619d4492e1d21
+      size: 542906
+    - path: Churn_Data/Population.xlsx
+      hash: md5
+      md5: 45ad4e6c60d18244f93e9f00ee4dd7b8
+      size: 40845
+    - path: Churn_Data/Services.xlsx
+      hash: md5
+      md5: f23a73ea0186a76b8631d023a25669a6
+      size: 1033834
+    - path: Churn_Data/Status.xlsx
+      hash: md5
+      md5: d1b920ab6e29f3f3cb06742dfe5b5f8b
+      size: 429339
     - path: src/data_collection.py
       hash: md5
-      md5: aed6f82c6cfdbd1b728294939c1f35dd
-      size: 957
+      md5: 60371a0fb8a80c78231720bdea986e5d
+      size: 3975
+    outs:
+    - path: data/raw/test.csv
+      hash: md5
+      md5: 847a9f18c4d0fd53641f11e0d750d6ef
+      size: 212187
+    - path: data/raw/train.csv
+      hash: md5
+      md5: b1b3f280022f0cf7007f0e777daef8e5
+      size: 847206
   Data_Preprocessing:
     cmd: python src/data_preprocessing.py
     deps:
     - path: data/raw/test.csv
       hash: md5
-      md5: 3b2bb40b6d4444789e27ad95cd833a45
-      size: 104076
+      md5: 847a9f18c4d0fd53641f11e0d750d6ef
+      size: 212187
     - path: data/raw/train.csv
       hash: md5
-      md5: aedc5dad6f23da8c1435614df438240d
-      size: 414908
+      md5: b1b3f280022f0cf7007f0e777daef8e5
+      size: 847206
     - path: src/data_preprocessing.py
       hash: md5
-      md5: c6ad1fa5370c979790bd32eeec64a9bf
-      size: 973
+      md5: b620452970c4af267fe3b564752f471d
+      size: 6417
     outs:
     - path: data/processed/test_processed.csv
       hash: md5
-      md5: 7c32ae8bdc9cefb6b69c5ac7c3b31dc1
-      size: 108781
+      md5: 5bbbcff4a29153f446f1652ee1c98974
+      size: 513280
     - path: data/processed/train_processed.csv
       hash: md5
-      md5: 06e435e51d497d249d0c7bafc330f51c
-      size: 434078
+      md5: 214aa8e48c217b19adc0796d4249b050
+      size: 2050122
+    - path: preprocessor.pkl
+      hash: md5
+      md5: 4c472d520e7d1f8bcdb98c907649a610
+      size: 3875
   Model_Training:
-    cmd: python src/model_training.py --model-type both
+    cmd: python src/model_training.py --model-type all
     deps:
     - path: data/processed/test_processed.csv
       hash: md5
-      md5: 7c32ae8bdc9cefb6b69c5ac7c3b31dc1
-      size: 108781
+      md5: 5bbbcff4a29153f446f1652ee1c98974
+      size: 513280
     - path: data/processed/train_processed.csv
       hash: md5
-      md5: 06e435e51d497d249d0c7bafc330f51c
-      size: 434078
+      md5: 214aa8e48c217b19adc0796d4249b050
+      size: 2050122
     - path: src/model_training.py
       hash: md5
-      md5: 10c6c6696a5bb689c4c463cb9e78b010
-      size: 4015
+      md5: 6bef68db019b601605d16a49f7a60b2d
+      size: 7696
     params:
       params.yaml:
         model:
-          model_type: xgboost
+          model_type: all
           n_estimators: 200
           max_depth: 8
           random_state: 42
           learning_rate: 0.08
           subsample: 0.95
           colsample_bytree: 0.95
+          max_iter: 1000
+          C: 1.0
     outs:
     - path: .mlflow_run_id
       hash: md5
-      md5: f6f78d0e5b8ea56f29d540d4954099e9
+      md5: 2e8af767ae8aadf6a0988c1e11373532
       size: 32
+    - path: model.pkl
+      hash: md5
+      md5: 9c882d1130e6802575ff99733cca43ee
+      size: 1892
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
     - path: .mlflow_run_id
       hash: md5
-      md5: f6f78d0e5b8ea56f29d540d4954099e9
+      md5: 2e8af767ae8aadf6a0988c1e11373532
       size: 32
     - path: model.pkl
       hash: md5
-      md5: 16af0504e2a387d1880d5fb2c56dd39b
-      size: 2528946
+      md5: 9c882d1130e6802575ff99733cca43ee
+      size: 1892
+    - path: preprocessor.pkl
+      hash: md5
+      md5: 4c472d520e7d1f8bcdb98c907649a610
+      size: 3875
     - path: src/model_evaluation.py
       hash: md5
-      md5: c30787565f7992ef746a5d4d4c71bf43
-      size: 1761
+      md5: 076cff7fcb81622a8d02795f67db1e5f
+      size: 3008
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: 0d032f62907d20deb3a79a3dc7dbed9d
+      size: 334

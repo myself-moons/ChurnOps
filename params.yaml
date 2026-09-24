@@ -1,8 +1,14 @@
 model:
-  model_type: xgboost
+  model_type: all          # all | logistic_regression | random_forest | xgboost
   n_estimators: 200
   max_depth: 8
   random_state: 42
   learning_rate: 0.08
   subsample: 0.95
   colsample_bytree: 0.95
+  max_iter: 1000           # Logistic Regression max iterations
+  C: 1.0                   # Logistic Regression regularisation strength
+
+monitoring:
+  roc_auc_threshold: 0.75  # Trigger retraining recommendation below this
+  min_predictions: 50      # Minimum logged predictions before evaluation

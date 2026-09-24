@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: water-potability-api
+    name: churn-ops-api
     runtime: python
     plan: free
     region: oregon

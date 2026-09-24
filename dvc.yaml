@@ -3,6 +3,12 @@ stages:
     cmd: python src/data_collection.py
     deps:
       - src/data_collection.py
+      - Churn_Data/Demographics.xlsx
+      - Churn_Data/Location.xlsx
+      - Churn_Data/Population.xlsx
+      - Churn_Data/Services.xlsx
+      - Churn_Data/Status.xlsx
+    outs:
       - data/raw/train.csv
       - data/raw/test.csv
 
@@ -15,21 +21,26 @@ stages:
     outs:
       - data/processed/train_processed.csv
       - data/processed/test_processed.csv
+      - preprocessor.pkl
 
   Model_Training:
-    cmd: python src/model_training.py --model-type both
+    cmd: python src/model_training.py --model-type all
     deps:
+      - src/model_training.py
       - data/processed/train_processed.csv
       - data/processed/test_processed.csv
-      - src/model_training.py
     params:
       - model
     outs:
+      - model.pkl
       - .mlflow_run_id
 
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
-      - model.pkl
-      - .mlflow_run_id
       - src/model_evaluation.py
+      - model.pkl
+      - preprocessor.pkl
+      - .mlflow_run_id
+    outs:
+      - metrics.json
