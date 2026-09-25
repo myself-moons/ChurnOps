@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code and pipeline artifacts
 COPY src/ ./src/
-COPY model.pkl preprocessor.pkl metrics.json ./
+COPY model.pkl preprocessor.pkl metrics.json dataset_summary.json ./
 
 # Copy MLflow tracking store so the dashboard has run history
 COPY mlruns/ ./mlruns/

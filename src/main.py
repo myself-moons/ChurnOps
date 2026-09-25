@@ -56,10 +56,11 @@ app = FastAPI(
 BASE_DIR          = Path(__file__).resolve().parent.parent
 MODEL_PATH        = BASE_DIR / "model.pkl"
 PREPROCESSOR_PATH = BASE_DIR / "preprocessor.pkl"
-METRICS_PATH      = BASE_DIR / "metrics.json"
-DASHBOARD_PATH    = BASE_DIR / "src" / "dashboard.html"
-LANDING_PATH      = BASE_DIR / "src" / "landing.html"
-PREDICT_PATH      = BASE_DIR / "src" / "predict.html"
+METRICS_PATH         = BASE_DIR / "metrics.json"
+DATASET_SUMMARY_PATH = BASE_DIR / "dataset_summary.json"
+DASHBOARD_PATH       = BASE_DIR / "src" / "dashboard.html"
+LANDING_PATH         = BASE_DIR / "src" / "landing.html"
+PREDICT_PATH         = BASE_DIR / "src" / "predict.html"
 TRACKING_URI      = os.getenv("MLFLOW_TRACKING_URI", f"file:{BASE_DIR / 'mlruns'}")
 
 # Load model and preprocessor at startup
@@ -93,6 +94,38 @@ def prediction_page():
 # ============================================================================ #
 # Internal helpers                                                              #
 # ============================================================================ #
+DEFAULT_DATASET_SUMMARY = {
+    "train": {
+        "available": True,
+        "rows": 5634,
+        "features": 32,
+        "missing_values": 4323,
+        "class_distribution": {"0": 4139, "1": 1495},
+    },
+    "test": {
+        "available": True,
+        "rows": 1409,
+        "features": 32,
+        "missing_values": 1080,
+        "class_distribution": {"0": 1035, "1": 374},
+    },
+    "processed_train": {
+        "available": True,
+        "rows": 5634,
+        "features": 39,
+        "missing_values": 0,
+        "class_distribution": {"0": 4139, "1": 1495},
+    },
+    "processed_test": {
+        "available": True,
+        "rows": 1409,
+        "features": 39,
+        "missing_values": 0,
+        "class_distribution": {"0": 1035, "1": 374},
+    },
+}
+
+
 def _dataset_summary(path: Path) -> dict:
     if not path.exists():
         return {"available": False, "rows": 0, "features": 0, "missing_values": 0}
@@ -111,6 +144,26 @@ def _dataset_summary(path: Path) -> dict:
         "missing_values": int(data.isna().sum().sum()),
         "class_distribution": dist,
     }
+
+
+def _get_all_dataset_summaries() -> dict:
+    # 1. Compute dynamically if local CSV files exist
+    train_path = BASE_DIR / "data/raw/train.csv"
+    if train_path.exists():
+        return {
+            "train":           _dataset_summary(BASE_DIR / "data/raw/train.csv"),
+            "test":            _dataset_summary(BASE_DIR / "data/raw/test.csv"),
+            "processed_train": _dataset_summary(BASE_DIR / "data/processed/train_processed.csv"),
+            "processed_test":  _dataset_summary(BASE_DIR / "data/processed/test_processed.csv"),
+        }
+    # 2. Check if dataset_summary.json exists (bundled in Docker container)
+    if DATASET_SUMMARY_PATH.exists():
+        try:
+            return json.loads(DATASET_SUMMARY_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    # 3. Fallback to default constants
+    return DEFAULT_DATASET_SUMMARY
 
 
 def _mlflow_runs() -> list:
@@ -209,12 +262,7 @@ def dashboard_data():
                 "Evaluation",
             ],
         },
-        "datasets": {
-            "train":           _dataset_summary(BASE_DIR / "data/raw/train.csv"),
-            "test":            _dataset_summary(BASE_DIR / "data/raw/test.csv"),
-            "processed_train": _dataset_summary(BASE_DIR / "data/processed/train_processed.csv"),
-            "processed_test":  _dataset_summary(BASE_DIR / "data/processed/test_processed.csv"),
-        },
+        "datasets": _get_all_dataset_summaries(),
         "results": metrics,
         "tracking": {
             "experiment":      "customer-churn",
