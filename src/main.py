@@ -77,17 +77,17 @@ SELECTED_MODEL = type(model).__name__
 # ============================================================================ #
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return LANDING_PATH.read_text()
+    return LANDING_PATH.read_text(encoding="utf-8")
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
-    return DASHBOARD_PATH.read_text()
+    return DASHBOARD_PATH.read_text(encoding="utf-8")
 
 
 @app.get("/predict", response_class=HTMLResponse)
 def prediction_page():
-    return PREDICT_PATH.read_text()
+    return PREDICT_PATH.read_text(encoding="utf-8")
 
 
 # ============================================================================ #
@@ -132,16 +132,40 @@ def _mlflow_runs() -> list:
         def clean(value):
             return None if pd.isna(value) else value
 
+        # Format model-specific parameter summary
+        param_parts = []
+        if model_type == "logistic_regression":
+            if pd.notna(run.get("params.C")):
+                param_parts.append(f"C={run.get('params.C')}")
+            if pd.notna(run.get("params.max_iter")):
+                param_parts.append(f"iter={run.get('params.max_iter')}")
+        elif model_type in ("random_forest", "xgboost"):
+            if pd.notna(run.get("params.n_estimators")):
+                param_parts.append(f"trees={run.get('params.n_estimators')}")
+            if pd.notna(run.get("params.max_depth")):
+                param_parts.append(f"depth={run.get('params.max_depth')}")
+            if pd.notna(run.get("params.learning_rate")):
+                param_parts.append(f"lr={run.get('params.learning_rate')}")
+
+        run_name = clean(run.get("tags.mlflow.runName"))
+        run_stage = clean(run.get("tags.run_stage"))
+        if not run_stage:
+            run_stage = "Champion" if (run_name and "final" in run_name) else "5-Fold CV"
+
         run_history.append({
             "run_id":        clean(run.get("run_id")),
-            "run_name":      clean(run.get("tags.mlflow.runName")),
+            "run_name":      run_name,
+            "run_stage":     run_stage,
             "status":        clean(run.get("status")) or "UNKNOWN",
             "start_time":    run.get("start_time").isoformat() if pd.notna(run.get("start_time")) else None,
             "model_type":    model_type,
+            "params_summary": ", ".join(param_parts) if param_parts else "-",
             "n_estimators":  clean(run.get("params.n_estimators")),
             "max_depth":     clean(run.get("params.max_depth")),
             "random_state":  clean(run.get("params.random_state")),
             "learning_rate": clean(run.get("params.learning_rate")),
+            "C":             clean(run.get("params.C")),
+            "max_iter":      clean(run.get("params.max_iter")),
             # CV selection metrics (candidate runs)
             "cv_mean_roc_auc": clean(run.get("metrics.cv_mean_roc_auc")),
             "cv_std_roc_auc":  clean(run.get("metrics.cv_std_roc_auc")),
@@ -161,7 +185,7 @@ def _mlflow_runs() -> list:
 @app.get("/api/dashboard")
 def dashboard_data():
     runs       = _mlflow_runs()
-    metrics    = json.loads(METRICS_PATH.read_text()) if METRICS_PATH.exists() else {}
+    metrics    = json.loads(METRICS_PATH.read_text(encoding="utf-8")) if METRICS_PATH.exists() else {}
     latest_run = runs[0] if runs else None
 
     # Best run by ROC-AUC (primary metric for churn)

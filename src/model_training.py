@@ -144,6 +144,40 @@ def compute_metrics(y_true, y_pred, y_prob):
     }
 
 
+def get_model_params(params: dict, model_type: str) -> dict:
+    """Extract and return only hyperparameters relevant to the specified model."""
+    rs = params.get("random_state", 42)
+    if model_type == "logistic_regression":
+        return {
+            "model_type": "logistic_regression",
+            "C": float(params.get("C", 1.0)),
+            "max_iter": int(params.get("max_iter", 1000)),
+            "random_state": int(rs),
+            "class_weight": "balanced",
+            "solver": "lbfgs",
+        }
+    elif model_type == "random_forest":
+        return {
+            "model_type": "random_forest",
+            "n_estimators": int(params.get("n_estimators", 100)),
+            "max_depth": int(params.get("max_depth", 6)),
+            "random_state": int(rs),
+            "class_weight": "balanced",
+        }
+    elif model_type == "xgboost":
+        return {
+            "model_type": "xgboost",
+            "n_estimators": int(params.get("n_estimators", 100)),
+            "max_depth": int(params.get("max_depth", 6)),
+            "learning_rate": float(params.get("learning_rate", 0.1)),
+            "subsample": float(params.get("subsample", 0.8)),
+            "colsample_bytree": float(params.get("colsample_bytree", 0.8)),
+            "random_state": int(rs),
+            "eval_metric": "logloss",
+        }
+    return {"model_type": model_type, "random_state": int(rs)}
+
+
 # --------------------------------------------------------------------------- #
 # Main                                                                         #
 # --------------------------------------------------------------------------- #
@@ -213,8 +247,13 @@ def main():
         )
 
         # Log CV results to MLflow (one run per candidate)
+        model_specific_params = get_model_params(trial_params, model_type)
         with mlflow.start_run(run_name=f"{model_type}_cv") as run:
-            mlflow.log_params(trial_params)
+            mlflow.set_tags({
+                "run_stage": "cv_candidate",
+                "model_family": model_type,
+            })
+            mlflow.log_params(model_specific_params)
             mlflow.log_metrics({
                 "cv_mean_roc_auc": mean_auc,
                 "cv_std_roc_auc":  std_auc,
@@ -260,8 +299,17 @@ def main():
     )
 
     # -- Phase 5: Log final model and test metrics to MLflow ----------------- #
+    winner_params = get_model_params(best_cv["params"], best_model_type)
     with mlflow.start_run(run_name=f"{best_model_type}_final") as final_run:
-        mlflow.log_params({**best_cv["params"], "selection_method": "stratified_5fold_cv"})
+        mlflow.set_tags({
+            "run_stage": "final_champion",
+            "model_family": best_model_type,
+            "selected_as_champion": "true",
+        })
+        mlflow.log_params({
+            **winner_params,
+            "selection_method": "stratified_5fold_cv",
+        })
         mlflow.log_metrics({
             # CV selection metrics
             "cv_mean_roc_auc": best_cv["mean_auc"],

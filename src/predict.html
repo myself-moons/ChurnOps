@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ChurnOps | Predict</title>
-  <meta name="description" content="ChurnOps customer churn prediction form — enter customer details and get an instant churn probability.">
+  <meta name="description" content="ChurnOps customer churn prediction form -- enter customer details and get an instant churn probability.">
   <style>
     :root {
       --ink:#1a1f36; --muted:#6b7280; --line:#e5e7eb; --paper:#f8fafc;
@@ -103,7 +103,7 @@
               <input type="number" id="Number_of_Dependents" name="Number of Dependents" min="0" max="10" value="0">
             </div>
             <div class="field">
-              <label for="Satisfaction_Score">Satisfaction Score (1–5)</label>
+              <label for="Satisfaction_Score">Satisfaction Score (1-5)</label>
               <input type="number" id="Satisfaction_Score" name="Satisfaction Score" min="1" max="5" value="3">
             </div>
           </div>
@@ -271,9 +271,9 @@
     form.addEventListener('submit', async e => {
       e.preventDefault();
       btn.disabled    = true;
-      btn.textContent = 'Predicting…';
+      btn.textContent = 'Predicting...';
 
-      // Build payload from form — use the label names as keys
+      // Build payload from form -- use the label names as keys
       const raw = new FormData(form);
       const payload = {};
       for (const [k, v] of raw.entries()) {
@@ -289,7 +289,7 @@
 
       idle.style.display    = 'none';
       content.style.display = 'block';
-      content.innerHTML     = '<p style="color:var(--muted)">Running model…</p>';
+      content.innerHTML     = '<p style="color:var(--muted)">Running model...</p>';
       panel.className       = 'panel result';
 
       try {
@@ -308,7 +308,7 @@
 
         content.innerHTML = `
           <div class="verdict ${isChurn ? 'churn':'stay'}">
-            ${isChurn ? '⚠ Likely to Churn' : '✓ Likely to Stay'}
+            ${isChurn ? '&#9888; Likely to Churn' : '&#10003; Likely to Stay'}
           </div>
           <div class="prob-bar-wrap ${isChurn ? 'churn-high':'churn-low'}">
             <div class="prob-label">

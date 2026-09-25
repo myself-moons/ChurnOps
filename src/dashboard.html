@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ChurnOps | MLflow Dashboard</title>
-  <meta name="description" content="ChurnOps MLflow experiment dashboard — compare Logistic Regression, Random Forest, and XGBoost churn models by ROC-AUC.">
+  <meta name="description" content="ChurnOps MLflow experiment dashboard -- compare Logistic Regression, Random Forest, and XGBoost churn models by ROC-AUC.">
   <style>
     :root {
       --ink:#1a1f36; --muted:#6b7280; --line:#e5e7eb; --paper:#f8fafc;
@@ -101,9 +101,10 @@
     const safe    = v => (v === null || v === undefined || v === '') ? '-' : String(v);
     const modelClass = mt => {
       if (!mt) return 'pill';
-      if (mt.includes('Logistic')) return 'pill lr';
-      if (mt.includes('Forest'))  return 'pill rf';
-      if (mt.includes('XGB'))     return 'pill xgb';
+      const s = mt.toLowerCase();
+      if (s.includes('logistic')) return 'pill lr';
+      if (s.includes('forest'))  return 'pill rf';
+      if (s.includes('xgb'))     return 'pill xgb';
       return 'pill';
     };
 
@@ -115,23 +116,42 @@
       const best   = data.tracking.best_run;
       const latest = data.tracking.latest_run;
       const r      = data.results;
-      const rows   = data.runs.map(run => `<tr>
-        <td title="${run.run_id}">${run.run_id ? run.run_id.slice(0,10)+'...' : '-'}</td>
-        <td><span class="${modelClass(run.run_name||run.model_type)}">${safe(run.run_name||run.model_type)}</span></td>
-        <td><span class="pill">${safe(run.status)}</span></td>
-        <td>${safe(run.n_estimators)}</td>
-        <td>${safe(run.max_depth)}</td>
-        <td>${safe(run.learning_rate)}</td>
-        <td><strong>${run.test_roc_auc ? percent(run.test_roc_auc) : '-'}</strong></td>
-        <td>${run.test_f1_score  ? percent(run.test_f1_score)  : '-'}</td>
-        <td>${run.test_accuracy  ? percent(run.test_accuracy)  : '-'}</td>
-        <td>${run.start_time ? new Date(run.start_time).toLocaleString() : '-'}</td>
-      </tr>`).join('');
+      const rows   = data.runs.map(run => {
+        const isFinal = (run.run_stage && run.run_stage.toLowerCase().includes('champion')) || (run.run_name && run.run_name.includes('final'));
+        const roleBadge = isFinal
+          ? '<span class="pill" style="background:#dbeafe;color:#1e40af;font-weight:700">&starf; Champion</span>'
+          : '<span class="pill" style="background:#f3f4f6;color:#4b5563">5-Fold CV</span>';
+
+        const cvScore = run.cv_mean_roc_auc
+          ? `<strong>${percent(run.cv_mean_roc_auc)}</strong>` + (run.cv_std_roc_auc ? `<span style="font-size:11px;color:var(--muted);margin-left:3px">&plusmn;${(Number(run.cv_std_roc_auc)*100).toFixed(2)}%</span>` : '')
+          : '-';
+
+        const testAuc = run.test_roc_auc
+          ? `<strong style="color:var(--indigo)">${percent(run.test_roc_auc)}</strong>`
+          : '<span style="color:var(--muted);font-size:12px">&mdash; (held out)</span>';
+
+        return `<tr>
+          <td title="${run.run_id}"><code style="font-size:12px">${run.run_id ? run.run_id.slice(0,8) : '-'}</code></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="${modelClass(run.model_type)}">${safe(run.model_type)}</span>
+              ${roleBadge}
+            </div>
+          </td>
+          <td><span class="pill">${safe(run.status)}</span></td>
+          <td><span style="font-family:monospace;font-size:12px;color:#374151">${safe(run.params_summary || '-')}</span></td>
+          <td>${cvScore}</td>
+          <td>${testAuc}</td>
+          <td>${run.test_f1_score ? percent(run.test_f1_score) : '&mdash;'}</td>
+          <td>${run.test_accuracy ? percent(run.test_accuracy) : '&mdash;'}</td>
+          <td><span style="font-size:12px;color:var(--muted)">${run.start_time ? new Date(run.start_time).toLocaleString() : '-'}</span></td>
+        </tr>`;
+      }).join('');
 
       app.innerHTML = `
         <section class="panel status-panel">
           <div class="eyebrow">Tracking Health</div>
-          <div class="status-line"><span class="dot"></span> MLflow tracking active — experiment: <strong style="margin-left:6px">customer-churn</strong></div>
+          <div class="status-line"><span class="dot"></span> MLflow tracking active &mdash; experiment: <strong style="margin-left:6px">customer-churn</strong></div>
           <p style="margin:10px 0 0;font-size:14px;color:var(--muted)">${number(data.tracking.finished_count)} of ${number(data.tracking.run_count)} runs finished. Selected model: <strong>${data.tracking.selected_model}</strong></p>
         </section>
         <section class="stat-grid">
@@ -141,7 +161,7 @@
           <div class="stat"><div class="stat-label">Selected Model</div><div class="stat-value" style="font-size:18px">${data.tracking.selected_model}</div><div class="stat-meta">Currently serving</div></div>
         </section>
         <section class="panel results-panel">
-          <h2>Evaluation Metrics — Selected Model</h2>
+          <h2>Evaluation Metrics &mdash; Selected Model</h2>
           <p class="panel-note">Final metrics from model_evaluation.py on the held-out test set.</p>
           <div class="metrics">
             ${metric('ROC-AUC',   r.roc_auc)}
@@ -150,20 +170,29 @@
             ${metric('Recall',    r.recall)}
             ${metric('Accuracy',  r.accuracy)}
           </div>
-          ${r.confusion_matrix ? `<p style="margin-top:14px;font-size:13px;color:var(--muted)">Confusion matrix — TN: <strong>${r.confusion_matrix.tn}</strong> | FP: <strong>${r.confusion_matrix.fp}</strong> | FN: <strong>${r.confusion_matrix.fn}</strong> | TP: <strong>${r.confusion_matrix.tp}</strong></p>` : ''}
+          ${r.confusion_matrix ? `<p style="margin-top:14px;font-size:13px;color:var(--muted)">Confusion matrix &mdash; TN: <strong>${r.confusion_matrix.tn}</strong> | FP: <strong>${r.confusion_matrix.fp}</strong> | FN: <strong>${r.confusion_matrix.fn}</strong> | TP: <strong>${r.confusion_matrix.tp}</strong></p>` : ''}
         </section>
         <section class="panel runs-panel">
           <div class="runs-heading">
-            <div><h2>MLflow Run History</h2><p class="panel-note">All trials across Logistic Regression, Random Forest, and XGBoost.</p></div>
-            <div class="best">Best: ${best ? `${percent(best.test_roc_auc)} ROC-AUC (${best.run_name||best.model_type})` : 'not available'}</div>
+            <div>
+              <h2>MLflow Run History</h2>
+              <p class="panel-note">Candidate models are evaluated strictly on 5-fold CV to prevent data leakage. Only the selected Champion is evaluated on the held-out test split.</p>
+            </div>
+            <div class="best">Best: ${best ? `${percent(best.test_roc_auc || best.cv_mean_roc_auc)} ROC-AUC (${best.run_name||best.model_type})` : 'not available'}</div>
           </div>
           <div class="table-wrap"><table>
             <thead><tr>
-              <th>Run ID</th><th>Model</th><th>Status</th>
-              <th>Estimators</th><th>Max Depth</th><th>LR</th>
-              <th>ROC-AUC ★</th><th>F1</th><th>Accuracy</th><th>Started</th>
+              <th>Run ID</th>
+              <th>Model &amp; Stage</th>
+              <th>Status</th>
+              <th>Key Parameters</th>
+              <th>5-Fold CV ROC-AUC &starf;</th>
+              <th>Test ROC-AUC</th>
+              <th>Test F1</th>
+              <th>Test Acc</th>
+              <th>Started</th>
             </tr></thead>
-            <tbody>${rows || '<tr><td colspan="10">No MLflow runs found.</td></tr>'}</tbody>
+            <tbody>${rows || '<tr><td colspan="9">No MLflow runs found.</td></tr>'}</tbody>
           </table></div>
         </section>`;
     }
