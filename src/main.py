@@ -142,9 +142,11 @@ def _mlflow_runs() -> list:
             "max_depth":     clean(run.get("params.max_depth")),
             "random_state":  clean(run.get("params.random_state")),
             "learning_rate": clean(run.get("params.learning_rate")),
-            # Primary metric
+            # CV selection metrics (candidate runs)
+            "cv_mean_roc_auc": clean(run.get("metrics.cv_mean_roc_auc")),
+            "cv_std_roc_auc":  clean(run.get("metrics.cv_std_roc_auc")),
+            # Final test metrics (only present on the *_final run)
             "test_roc_auc":  clean(run.get("metrics.test_roc_auc")),
-            # Secondary metrics
             "test_accuracy": clean(run.get("metrics.test_accuracy")),
             "test_f1_score": clean(run.get("metrics.test_f1_score")),
             "test_precision":clean(run.get("metrics.test_precision")),

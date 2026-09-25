@@ -21,7 +21,8 @@ stages:
     outs:
       - data/processed/train_processed.csv
       - data/processed/test_processed.csv
-      - preprocessor.pkl
+      - preprocessor.pkl:
+          cache: false
 
   Model_Training:
     cmd: python src/model_training.py --model-type all
@@ -32,8 +33,10 @@ stages:
     params:
       - model
     outs:
-      - model.pkl
-      - .mlflow_run_id
+      - model.pkl:
+          cache: false
+      - .mlflow_run_id:
+          cache: false
 
   Evaluation:
     cmd: python src/model_evaluation.py
@@ -43,4 +46,5 @@ stages:
       - preprocessor.pkl
       - .mlflow_run_id
     outs:
-      - metrics.json
+      - metrics.json:
+          cache: false

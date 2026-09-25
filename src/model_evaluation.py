@@ -1,9 +1,15 @@
 """
 model_evaluation.py — ChurnOps
 
-Loads the best model (model.pkl) and the test set, computes full
-classification metrics, logs them back to the corresponding MLflow run,
-and writes metrics.json for the dashboard and DVC.
+Loads the winning model (model.pkl) — which was selected by 5-fold Stratified
+CV in model_training.py — and evaluates it ONCE on the untouched test split.
+
+Writes metrics.json for the dashboard and DVC, including:
+  - Final test metrics (ROC-AUC, Accuracy, Precision, Recall, F1, CM)
+  - CV selection metrics (mean and std ROC-AUC) sourced from the MLflow run
+
+The test set is NOT used for model selection; this script only finalises
+the single held-out evaluation that follows model selection.
 """
 
 import json
@@ -54,6 +60,17 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "customer-churn"))
 
+    # Pull CV selection metrics from the training run (logged by model_training.py)
+    cv_mean_roc_auc: float | None = None
+    cv_std_roc_auc:  float | None = None
+    if run_id:
+        try:
+            training_run = mlflow.get_run(run_id)
+            cv_mean_roc_auc = training_run.data.metrics.get("cv_mean_roc_auc")
+            cv_std_roc_auc  = training_run.data.metrics.get("cv_std_roc_auc")
+        except Exception:
+            pass  # Non-fatal — evaluation can proceed without CV info
+
     run_ctx = mlflow.start_run(run_id=run_id) if run_id else mlflow.start_run()
     with run_ctx:
         mlflow.log_metrics({
@@ -70,12 +87,16 @@ def main():
         })
 
     metrics_dict = {
-        "model": type(model).__name__,
-        "accuracy":  acc,
-        "precision": prec,
-        "recall":    recall,
-        "f1_score":  f1,
-        "roc_auc":   roc_auc,
+        "model":          type(model).__name__,
+        # Final test-set metrics (evaluated ONCE, after CV-based model selection)
+        "accuracy":       acc,
+        "precision":      prec,
+        "recall":         recall,
+        "f1_score":       f1,
+        "roc_auc":        roc_auc,
+        # CV selection metrics (sourced from MLflow run logged by model_training.py)
+        "cv_mean_roc_auc": cv_mean_roc_auc,
+        "cv_std_roc_auc":  cv_std_roc_auc,
         "confusion_matrix": {
             "tn": int(cm[0, 0]),
             "fp": int(cm[0, 1]),

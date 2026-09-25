@@ -1,10 +1,23 @@
-"""
-model_training.py — ChurnOps
+r"""
+model_training.py -- ChurnOps
 
-Trains Logistic Regression, Random Forest, and/or XGBoost on the
-processed churn dataset. Tracks every trial in the MLflow
-'customer-churn' experiment. Selects the best model by ROC-AUC
-and saves it as model.pkl.
+MODEL SELECTION METHODOLOGY (correct, post-fix):
+-------------------------------------------------
+Full dataset
+    |
+    |-- Training data (80%)  --> Stratified 5-fold CV
+    |                                |
+    |                                |-- Logistic Regression  -> mean CV ROC-AUC
+    |                                |-- Random Forest        -> mean CV ROC-AUC
+    |                                \-- XGBoost             -> mean CV ROC-AUC
+    |
+    |   1. Select model with highest mean CV ROC-AUC
+    |   2. Retrain selected model on the COMPLETE training split
+    |
+    \-- Test data (20%) -- UNTOUCHED until step 3.
+                3. Evaluate the retrained winner ONCE -> final metrics
+
+The test set is NOT used for model selection.
 """
 
 import argparse
@@ -14,6 +27,7 @@ from pathlib import Path
 
 import mlflow
 import mlflow.sklearn
+import numpy as np
 import pandas as pd
 import yaml
 from sklearn.ensemble import RandomForestClassifier
@@ -25,10 +39,16 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from xgboost import XGBClassifier
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 TARGET   = "Churn Value"
+
+# -- Cross-validation configuration ------------------------------------------ #
+CV_N_SPLITS   = 5
+CV_SHUFFLE    = True
+# Random state for StratifiedKFold comes from params (model.random_state)
 
 
 # --------------------------------------------------------------------------- #
@@ -135,6 +155,7 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "customer-churn"))
 
+    # -- Load data ----------------------------------------------------------- #
     train = pd.read_csv(ROOT_DIR / "data/processed/train_processed.csv")
     test  = pd.read_csv(ROOT_DIR / "data/processed/test_processed.csv")
 
@@ -153,59 +174,121 @@ def main():
         else [params["model_type"]]
     )
 
-    best_model   = None
-    best_roc_auc = -1.0
-    best_run_id  = None
+    # -- Stratified K-Fold cross-validator ----------------------------------- #
+    skf = StratifiedKFold(
+        n_splits=CV_N_SPLITS,
+        shuffle=CV_SHUFFLE,
+        random_state=params["random_state"],
+    )
+
+    # -- Phase 1: Cross-validate all candidate models on TRAINING data only -- #
+    # The test set is NOT touched during this phase.
+    print(f"\n-- Phase 1: {CV_N_SPLITS}-fold Stratified CV on training data --")
+
+    cv_results: dict[str, dict] = {}          # model_type -> {mean, std, fold_scores, clf, run_id}
 
     for model_type in model_choices:
         trial_params = {**params, "model_type": model_type}
+        clf = build_model(trial_params, model_type)
 
-        with mlflow.start_run(run_name=model_type) as run:
-            clf = build_model(trial_params, model_type)
+        # Inject scale_pos_weight for XGBoost after construction
+        if model_type == "xgboost":
+            clf.set_params(scale_pos_weight=scale_pos_weight)
 
-            # Inject scale_pos_weight for XGBoost after construction
-            if model_type == "xgboost":
-                clf.set_params(scale_pos_weight=scale_pos_weight)
+        # Run CV on training data -- ROC-AUC per fold
+        fold_scores = cross_val_score(
+            clf,
+            X_train, y_train,
+            cv=skf,
+            scoring="roc_auc",
+            n_jobs=-1,
+        )
 
-            clf.fit(X_train, y_train)
+        mean_auc = float(np.mean(fold_scores))
+        std_auc  = float(np.std(fold_scores))
 
-            # Training metrics
-            train_prob = clf.predict_proba(X_train)[:, 1]
-            train_pred = clf.predict(X_train)
-            train_m    = compute_metrics(y_train, train_pred, train_prob)
+        print(
+            f"  [{model_type}]  CV ROC-AUC = {mean_auc:.4f} +/- {std_auc:.4f}  "
+            f"(folds: {[round(s, 4) for s in fold_scores]})"
+        )
 
-            # Test metrics
-            test_prob  = clf.predict_proba(X_test)[:, 1]
-            test_pred  = clf.predict(X_test)
-            test_m     = compute_metrics(y_test, test_pred, test_prob)
-
-            # Log everything
+        # Log CV results to MLflow (one run per candidate)
+        with mlflow.start_run(run_name=f"{model_type}_cv") as run:
             mlflow.log_params(trial_params)
-            mlflow.log_metrics({f"train_{k}": v for k, v in train_m.items()})
-            mlflow.log_metrics({f"test_{k}":  v for k, v in test_m.items()})
-            mlflow.sklearn.log_model(clf, "model")
+            mlflow.log_metrics({
+                "cv_mean_roc_auc": mean_auc,
+                "cv_std_roc_auc":  std_auc,
+                **{f"cv_fold_{i+1}_roc_auc": float(s) for i, s in enumerate(fold_scores)},
+            })
 
-            print(
-                f"  [{model_type}]  "
-                f"ROC-AUC={test_m['roc_auc']:.4f}  "
-                f"F1={test_m['f1_score']:.4f}  "
-                f"Acc={test_m['accuracy']:.4f}"
-            )
+        cv_results[model_type] = {
+            "mean_auc":   mean_auc,
+            "std_auc":    std_auc,
+            "fold_scores": fold_scores.tolist(),
+            "params":      trial_params,
+            "cv_run_id":   run.info.run_id,
+        }
 
-            # Select best by ROC-AUC (primary metric for churn)
-            if test_m["roc_auc"] > best_roc_auc:
-                best_model   = clf
-                best_roc_auc = test_m["roc_auc"]
-                best_run_id  = run.info.run_id
+    # -- Phase 2: Select the winning model from CV results ------------------- #
+    # Test set has NOT been used yet.
+    best_model_type = max(cv_results, key=lambda m: cv_results[m]["mean_auc"])
+    best_cv         = cv_results[best_model_type]
 
-    print(f"\nBest model: {type(best_model).__name__}  ROC-AUC={best_roc_auc:.4f}")
+    print(f"\n-- Phase 2: Selected '{best_model_type}' (CV ROC-AUC = {best_cv['mean_auc']:.4f}) --")
+    print("  Retraining selected model on COMPLETE training split...")
 
-    (ROOT_DIR / ".mlflow_run_id").write_text(best_run_id)
+    # -- Phase 3: Retrain the winner on the FULL training split -------------- #
+    final_clf = build_model(best_cv["params"], best_model_type)
+    if best_model_type == "xgboost":
+        final_clf.set_params(scale_pos_weight=scale_pos_weight)
+
+    final_clf.fit(X_train, y_train)
+
+    # -- Phase 4: Evaluate ONCE on the untouched test split ------------------ #
+    # This is the only place the test set is used -- AFTER model selection.
+    print("\n-- Phase 3: Final evaluation on UNTOUCHED test split (one shot) --")
+
+    test_prob = final_clf.predict_proba(X_test)[:, 1]
+    test_pred = final_clf.predict(X_test)
+    test_m    = compute_metrics(y_test, test_pred, test_prob)
+
+    print(
+        f"  [{best_model_type}]  "
+        f"Test ROC-AUC={test_m['roc_auc']:.4f}  "
+        f"F1={test_m['f1_score']:.4f}  "
+        f"Acc={test_m['accuracy']:.4f}"
+    )
+
+    # -- Phase 5: Log final model and test metrics to MLflow ----------------- #
+    with mlflow.start_run(run_name=f"{best_model_type}_final") as final_run:
+        mlflow.log_params({**best_cv["params"], "selection_method": "stratified_5fold_cv"})
+        mlflow.log_metrics({
+            # CV selection metrics
+            "cv_mean_roc_auc": best_cv["mean_auc"],
+            "cv_std_roc_auc":  best_cv["std_auc"],
+            # Final test metrics (generated ONCE, after model selection)
+            "test_roc_auc":  test_m["roc_auc"],
+            "test_accuracy": test_m["accuracy"],
+            "test_precision":test_m["precision"],
+            "test_recall":   test_m["recall"],
+            "test_f1_score": test_m["f1_score"],
+        })
+        mlflow.sklearn.log_model(final_clf, "model")
+        final_run_id = final_run.info.run_id
+
+    print(f"\nFinal model: {type(final_clf).__name__}")
+    print(f"  CV mean ROC-AUC : {best_cv['mean_auc']:.4f} +/- {best_cv['std_auc']:.4f}")
+    print(f"  Test ROC-AUC    : {test_m['roc_auc']:.4f}")
+    print(f"  Test Accuracy   : {test_m['accuracy']:.4f}")
+    print(f"  Test F1         : {test_m['f1_score']:.4f}")
+
+    # -- Save artifacts ------------------------------------------------------ #
+    (ROOT_DIR / ".mlflow_run_id").write_text(final_run_id)
 
     with (ROOT_DIR / "model.pkl").open("wb") as f:
-        pickle.dump(best_model, f)
+        pickle.dump(final_clf, f)
 
-    print("model.pkl saved.")
+    print("\nmodel.pkl saved.")
 
 
 if __name__ == "__main__":

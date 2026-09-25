@@ -1,4 +1,4 @@
-# Water Potability Pipeline Runbook
+# ChurnOps Pipeline Runbook
 
 This runbook is the canonical setup and execution guide for developers. It
 uses the committed DVC graph; do not recreate the stages with `dvc stage add`.
@@ -17,7 +17,7 @@ tracking, Jenkins for CI, and FastAPI for the web/API layer.
 From the repository root:
 
 ```bash
-cd /workspaces/Jenkins_Test
+cd ChurnOps
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -65,40 +65,49 @@ dvc status
 pytest -q
 ```
 
-## 4. Select and retrain a model
+## 4. Model selection methodology
+
+ChurnOps uses **5-fold Stratified CV on training data** for model selection.
+The test set is held out and evaluated ONCE after the winning model is chosen.
+
+Pipeline:
+
+```text
+Training data (80%)
+    │
+    └── Stratified 5-fold CV
+            ├── Logistic Regression  → mean CV ROC-AUC
+            ├── Random Forest        → mean CV ROC-AUC
+            └── XGBoost             → mean CV ROC-AUC
+
+① Select model with highest mean CV ROC-AUC (test set NOT used here)
+② Retrain selected model on COMPLETE training split
+③ Evaluate ONCE on untouched test split → final test metrics
+④ Save model.pkl
+```
+
+## 5. Select and retrain a model
 
 Model settings live in `params.yaml`. The supported model types are:
 
+- `logistic_regression`
 - `random_forest`
 - `xgboost`
+- `all` (trains all three, selects best by CV ROC-AUC)
 
-The committed DVC stage runs both families for every parameter set and writes
-the higher-accuracy model to `model.pkl`.
-
-Random Forest example:
+Example `params.yaml`:
 
 ```yaml
 model:
-  model_type: random_forest
+  model_type: all
   n_estimators: 200
   max_depth: 8
   random_state: 42
   learning_rate: 0.08
   subsample: 0.95
   colsample_bytree: 0.95
-```
-
-XGBoost example:
-
-```yaml
-model:
-  model_type: xgboost
-  n_estimators: 200
-  max_depth: 8
-  random_state: 42
-  learning_rate: 0.08
-  subsample: 0.95
-  colsample_bytree: 0.95
+  max_iter: 1000
+  C: 1.0
 ```
 
 After changing parameters, run:
@@ -108,45 +117,25 @@ dvc repro
 ```
 
 DVC reuses unchanged data stages and reruns training/evaluation. Each training
-execution creates a new MLflow run; previous model-family runs are preserved.
-When `params.yaml` changes, the training stage creates one new run for each
-model family and selects the best one for prediction. If nothing changed, DVC
-correctly skips the stage.
-The MLflow store is versioned, so push it with the selected model and metrics:
+execution creates new MLflow runs (one per CV candidate + one for the final
+model). Previous runs are preserved for comparison.
+
+Commit results:
 
 ```bash
 git add dvc.lock metrics.json mlruns model.pkl params.yaml
-git commit -m "Train models and update tracked runs"
+git commit -m "Retrain: update model and metrics"
 git push origin main
 ```
-
-Render deploys the pushed model and displays the complete history from the
-pushed `mlruns/` directory. Render does not retrain models during deployment.
 
 For a one-off trial without editing `params.yaml`:
 
 ```bash
-python src/model_training.py \
-  --model-type xgboost \
-  --n-estimators 200 \
-  --max-depth 8 \
-  --learning-rate 0.05 \
-  --random-state 42
+python src/model_training.py --model-type all
 python src/model_evaluation.py
 ```
 
-Use `dvc exp run -S ...` only from a clean Git worktree because DVC uses Git
-stashing internally:
-
-```bash
-
-  -S model.model_type=xgboost \
-  -S model.n_estimators=200 \
-  -S model.max_depth=8 \
-  -S model.learning_rate=0.05
-```
-
-## 5. Inspect MLflow runs
+## 6. Inspect MLflow runs
 
 Start the local MLflow UI in a second terminal:
 
@@ -154,8 +143,8 @@ Start the local MLflow UI in a second terminal:
 mlflow ui --backend-store-uri ./mlruns --host 0.0.0.0 --port 5000
 ```
 
-Open `http://localhost:5000` and select the `water-potability` experiment.
-Compare `model_type`, model parameters, `test_accuracy`, and `test_f1_score`.
+Open `http://localhost:5000` and select the `customer-churn` experiment.
+Compare `model_type`, `cv_mean_roc_auc`, and final `test_roc_auc`.
 
 You can also print the run history:
 
@@ -165,14 +154,15 @@ import mlflow
 from pathlib import Path
 
 mlflow.set_tracking_uri(f"file:{Path.cwd() / 'mlruns'}")
-experiment = mlflow.get_experiment_by_name("water-potability")
+experiment = mlflow.get_experiment_by_name("customer-churn")
 runs = mlflow.search_runs(
     experiment_ids=[experiment.experiment_id],
-    order_by=["metrics.test_accuracy DESC"],
+    order_by=["metrics.cv_mean_roc_auc DESC"],
 )
 print(runs[[
-    "run_id", "params.model_type", "params.n_estimators",
-    "params.max_depth", "metrics.test_accuracy", "metrics.test_f1_score",
+    "run_id", "params.model_type",
+    "metrics.cv_mean_roc_auc", "metrics.cv_std_roc_auc",
+    "metrics.test_roc_auc",
 ]].to_string(index=False))
 PY
 ```
@@ -184,7 +174,7 @@ export MLFLOW_TRACKING_URI=http://mlflow:5000
 dvc repro
 ```
 
-## 6. Run the FastAPI application
+## 7. Run the FastAPI application
 
 Start the app in another terminal:
 
@@ -199,7 +189,7 @@ Pages and endpoints:
 | --- | --- |
 | `http://localhost:8000/` | Project overview and pipeline landing page |
 | `http://localhost:8000/dashboard` | MLflow run history and tracking dashboard |
-| `http://localhost:8000/predict` | Visual water-sample prediction form |
+| `http://localhost:8000/predict` | Customer churn prediction form |
 | `http://localhost:8000/docs` | Interactive API documentation |
 | `http://localhost:8000/api/dashboard` | Dashboard data as JSON |
 | `http://localhost:8000/api/runs` | MLflow run history as JSON |
@@ -213,19 +203,42 @@ Example API request:
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "ph": 7.0,
-    "Hardness": 200.0,
-    "Solids": 20000.0,
-    "Chloramines": 7.0,
-    "Sulfate": 300.0,
-    "Conductivity": 450.0,
-    "Organic_carbon": 15.0,
-    "Trihalomethanes": 60.0,
-    "Turbidity": 3.5
+    "Gender": "Male",
+    "Age": 55,
+    "Married": "No",
+    "Number of Dependents": 0,
+    "Satisfaction Score": 1,
+    "Referred a Friend": "No",
+    "Number of Referrals": 0,
+    "Tenure in Months": 2,
+    "Offer": "No Offer",
+    "Phone Service": "Yes",
+    "Multiple Lines": "No",
+    "Internet Service": "Yes",
+    "Internet Type": "Fiber Optic",
+    "Online Security": "No",
+    "Online Backup": "No",
+    "Device Protection Plan": "No",
+    "Premium Tech Support": "No",
+    "Streaming TV": "No",
+    "Streaming Movies": "No",
+    "Streaming Music": "No",
+    "Unlimited Data": "No",
+    "Contract": "Month-to-Month",
+    "Paperless Billing": "Yes",
+    "Payment Method": "Bank Withdrawal",
+    "Avg Monthly Long Distance Charges": 0.0,
+    "Avg Monthly GB Download": 5,
+    "Monthly Charge": 95.0,
+    "Total Charges": 190.0,
+    "Total Refunds": 0.0,
+    "Total Extra Data Charges": 0.0,
+    "Total Long Distance Charges": 0.0,
+    "Total Revenue": 190.0
   }'
 ```
 
-## 7. Jenkins
+## 8. Jenkins
 
 The `JenkinsFile` performs these stages:
 
@@ -248,7 +261,7 @@ installation, and credentials if the repository is private. For team usage,
 configure `MLFLOW_TRACKING_URI` as a Jenkins environment variable pointing to
 a persistent MLflow server.
 
-## 8. Common issues
+## 9. Common issues
 
 ### `dvc: command not found`
 
@@ -270,7 +283,7 @@ Generated `data/raw/*.csv` and `data/processed/*.csv` files must be DVC
 outputs, not Git-tracked files. Follow the repository `.gitignore` rules and
 run `dvc repro` from the project root.
 
-### DVC experiment stashing conflicts
+### Sklearn version warning on unpickling
 
-Commit or temporarily set aside worktree changes, or use the direct training
-commands in section 4.
+The model and preprocessor were built with the venv Python.
+Re-run the pipeline with the venv activated to regenerate consistent artifacts.

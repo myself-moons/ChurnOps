@@ -1,0 +1,15 @@
+artifact_uri: file:C:/Users/malha/OneDrive/Documents/GitHub/ChurnOps/mlruns/846456055125496440/832ab75f396a452e9c9af1a03d791d60/artifacts
+end_time: 1790333174927
+entry_point_name: ''
+experiment_id: '846456055125496440'
+lifecycle_stage: active
+run_id: 832ab75f396a452e9c9af1a03d791d60
+run_name: random_forest_cv
+run_uuid: 832ab75f396a452e9c9af1a03d791d60
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790333174843
+status: 3
+tags: []
+user_id: malha

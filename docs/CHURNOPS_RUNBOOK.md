@@ -1,4 +1,4 @@
-﻿# ChurnOps Operational Runbook
+# ChurnOps Operational Runbook
 
 ## Requirements
 
@@ -9,7 +9,7 @@
 ## Setup
 
 ```bash
-cd WaterOps
+cd ChurnOps
 python -m venv .venv
 source .venv/bin/activate   # Linux/Mac
 .venv\Scripts\activate      # Windows

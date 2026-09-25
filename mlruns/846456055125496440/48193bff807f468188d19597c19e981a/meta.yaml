@@ -1,0 +1,15 @@
+artifact_uri: file:C:/Users/malha/OneDrive/Documents/GitHub/ChurnOps/mlruns/846456055125496440/48193bff807f468188d19597c19e981a/artifacts
+end_time: 1790332985195
+entry_point_name: ''
+experiment_id: '846456055125496440'
+lifecycle_stage: active
+run_id: 48193bff807f468188d19597c19e981a
+run_name: xgboost_final
+run_uuid: 48193bff807f468188d19597c19e981a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1790332932979
+status: 3
+tags: []
+user_id: malha

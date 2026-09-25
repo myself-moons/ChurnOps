@@ -139,7 +139,7 @@ Three classifiers trained and tracked in parallel:
 | Random Forest | `class_weight='balanced'` |
 | XGBoost | `scale_pos_weight` (ratio of negatives/positives) |
 
-The best model (by ROC-AUC on the test set) is saved as `model.pkl`.
+The best model (by mean CV ROC-AUC across 5 stratified folds on training data) is retrained on the complete training split and saved as `model.pkl`.
 
 ---
 
@@ -405,7 +405,7 @@ The image is self-contained — `model.pkl`, `preprocessor.pkl`, `metrics.json`,
 
 ```bash
 # Clone and navigate
-cd WaterOps
+cd ChurnOps
 
 # Create virtual environment
 python -m venv .venv
@@ -450,7 +450,7 @@ Changing `params.yaml` and re-running `dvc repro` creates new MLflow runs while 
 ## Project Structure
 
 ```
-WaterOps/
+ChurnOps/
 ├── Churn_Data/             Raw Excel source files (unchanged)
 ├── data/
 │   ├── raw/                DVC output — train/test splits

@@ -25,8 +25,8 @@ stages:
       size: 429339
     - path: src/data_collection.py
       hash: md5
-      md5: 60371a0fb8a80c78231720bdea986e5d
-      size: 3975
+      md5: 1f1ad2262e18e0bb557db4f01b100c58
+      size: 4083
     outs:
     - path: data/raw/test.csv
       hash: md5
@@ -49,8 +49,8 @@ stages:
       size: 847206
     - path: src/data_preprocessing.py
       hash: md5
-      md5: b620452970c4af267fe3b564752f471d
-      size: 6417
+      md5: f18f4b4af6ab7f1d0787735fceaeb967
+      size: 6595
     outs:
     - path: data/processed/test_processed.csv
       hash: md5
@@ -62,8 +62,8 @@ stages:
       size: 2050122
     - path: preprocessor.pkl
       hash: md5
-      md5: 4c472d520e7d1f8bcdb98c907649a610
-      size: 3875
+      md5: 29d4ea74d858ed4e7a27a04210919472
+      size: 4019
   Model_Training:
     cmd: python src/model_training.py --model-type all
     deps:
@@ -77,8 +77,8 @@ stages:
       size: 2050122
     - path: src/model_training.py
       hash: md5
-      md5: 6bef68db019b601605d16a49f7a60b2d
-      size: 7696
+      md5: 33f9d98d551a680102acdfd15f350219
+      size: 11671
     params:
       params.yaml:
         model:
@@ -94,33 +94,33 @@ stages:
     outs:
     - path: .mlflow_run_id
       hash: md5
-      md5: 2e8af767ae8aadf6a0988c1e11373532
+      md5: 71f69da17fd0787848b6e935317e8718
       size: 32
     - path: model.pkl
       hash: md5
-      md5: 9c882d1130e6802575ff99733cca43ee
-      size: 1892
+      md5: d43a7d659538e0662d3ca74861b3c4ee
+      size: 580195
   Evaluation:
     cmd: python src/model_evaluation.py
     deps:
     - path: .mlflow_run_id
       hash: md5
-      md5: 2e8af767ae8aadf6a0988c1e11373532
+      md5: 71f69da17fd0787848b6e935317e8718
       size: 32
     - path: model.pkl
       hash: md5
-      md5: 9c882d1130e6802575ff99733cca43ee
-      size: 1892
+      md5: d43a7d659538e0662d3ca74861b3c4ee
+      size: 580195
     - path: preprocessor.pkl
       hash: md5
-      md5: 4c472d520e7d1f8bcdb98c907649a610
-      size: 3875
+      md5: 29d4ea74d858ed4e7a27a04210919472
+      size: 4019
     - path: src/model_evaluation.py
       hash: md5
-      md5: 076cff7fcb81622a8d02795f67db1e5f
-      size: 3008
+      md5: 5f4b761bfb3e646b7b03a0bd5343960d
+      size: 4228
     outs:
     - path: metrics.json
       hash: md5
-      md5: 0d032f62907d20deb3a79a3dc7dbed9d
-      size: 334
+      md5: f594bd7521cc4b87a8fa26fb8d065cf4
+      size: 419
